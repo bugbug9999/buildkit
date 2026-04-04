@@ -1,0 +1,63 @@
+[
+  {
+    "file": "src/lib/daily-summary.ts",
+    "line": 55,
+    "do": "proteinAchievementRate 계산을 (totalProteinG / proteinGoalG) * 100 에서 totalProteinG / proteinGoalG 로 변경 (0~1 범위로)",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  },
+  {
+    "file": "mobile/src/types/report.ts",
+    "do": "WeeklyReport 인터페이스의 필드명을 백엔드 응답과 일치시켜. avgProteinAchievementRate, avgCaloriesKcal, trackedDays, weekStart 사용",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  },
+  {
+    "file": "mobile/src/lib/api.ts",
+    "do": "401 응답 시 refresh token으로 /auth/refresh 호출 후 재시도하는 인터셉터 추가. SecureStore에서 refreshToken 읽기.",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  },
+  {
+    "file": "src/lib/quota.ts",
+    "do": "getDailyLimitByTier 함수를 getDailyLimitByUser(user)로 변경. premiumExpiredAt이 현재보다 과거면 free tier 적용.",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  },
+  {
+    "file": "src/routes/meal.ts",
+    "do": "meal 저장 시 caloriesKcal > 0, proteinG >= 0, carbsG >= 0, fatG >= 0 서버사이드 유효성 검사 추가. 실패 시 400 응답.",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  },
+  {
+    "file": "prisma/schema.prisma",
+    "do": "Injection 모델 추가 (id, userId, date, time, drug, dosageMg, site, memo, createdAt). WeightLog 모델 추가 (id, userId, weightKg, date, createdAt). User에 targetWeightKg 필드 추가.",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  },
+  {
+    "file": "src/routes/injection.ts",
+    "do": "새 파일 생성. Injection CRUD API (POST /injection, GET /injections, PATCH /injection/:id, DELETE /injection/:id). Prisma client 사용. JWT 인증.",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  },
+  {
+    "file": "src/routes/weight.ts",
+    "do": "새 파일 생성. WeightLog CRUD API (POST /weight, GET /weights?range=30d). 목표 체중 대비 진행률 계산 포함.",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  },
+  {
+    "file": "src/lib/smart-alert.ts",
+    "do": "새 파일 생성. 스마트 경고 로직: 단백질<체중×1.0g(17시후)→근손실경고, 칼로리>권장×1.1→초과경고, 물<1000ml(15시후)→탈수경고, 해당끼니+2시간 미기록→넛지. 각 함수 export.",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  },
+  {
+    "file": "mobile/app/(tabs)/_layout.tsx",
+    "do": "탭바에 아이콘 추가: 홈(home), 기록(book-open), 리포트(bar-chart), 프로필(user). @expo/vector-icons의 Feather 사용. 한국어 라벨.",
+    "model": "gemini",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default"
+  }
+]

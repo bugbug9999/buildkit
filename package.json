@@ -1,0 +1,20 @@
+{
+  "name": "buildkit",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "토큰 효율 AI 오케스트레이션 — pipeline 기반 협업",
+  "main": "buildkit.js",
+  "bin": {
+    "buildkit": "./buildkit.js"
+  },
+  "scripts": {
+    "start": "node buildkit.js",
+    "run": "node buildkit.js run",
+    "status": "node buildkit.js status"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "@google/generative-ai": "^0.24.0",
+    "openai": "^4.80.0"
+  }
+}

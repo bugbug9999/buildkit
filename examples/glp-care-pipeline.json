@@ -1,0 +1,50 @@
+{
+  "project": "GLP-Care 투약 기록 기능",
+  "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+  "steps": [
+    {
+      "step": "ux",
+      "role": "CPO",
+      "model": "sonnet",
+      "prompt": "GLP-1 다이어트 앱의 투약 기록 화면 UX 명세를 작성해. 날짜/시간/약(위고비/마운자로/삭센다)/용량(슬라이더)/부위(허벅지/복부/팔)/메모. 홈 대시보드에 다음 주사일 표시. 한국어. 간결하게.",
+      "input": "PRD.md",
+      "output": "specs/injection-ux.md"
+    },
+    {
+      "step": "architecture",
+      "role": "Blueprint",
+      "model": "sonnet",
+      "prompt": "이 UX 명세를 기반으로 투약 기록 API/DB 설계해. Prisma 모델, Fastify 라우트, 요청/응답 스키마. 간결하게.",
+      "input": ["specs/injection-ux.md"],
+      "output": "specs/injection-arch.md"
+    },
+    {
+      "step": "code-backend",
+      "role": "Developer",
+      "model": "gemini",
+      "prompt": "아래 설계대로 Fastify + Prisma 백엔드 코드를 작성해. 파일별로 전체 코드 출력. 각 파일을 // === 파일경로 === 로 구분해.",
+      "input": ["specs/injection-arch.md"],
+      "files": ["prisma/schema.prisma", "src/routes/injection.ts"],
+      "output": "code",
+      "verify": "typecheck"
+    },
+    {
+      "step": "code-frontend",
+      "role": "Developer",
+      "model": "gemini",
+      "prompt": "아래 UX 명세대로 Expo React Native 화면을 작성해. NativeWind(Tailwind) 스타일. 파일별로 전체 코드 출력. // === 파일경로 === 로 구분.",
+      "input": ["specs/injection-ux.md", "specs/injection-arch.md"],
+      "files": ["mobile/app/injection.tsx"],
+      "output": "code"
+    },
+    {
+      "step": "review",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "아래 코드 변경사항을 리뷰해. UX 명세와 일치하는지, 보안 문제 없는지, 에러 핸들링 되는지 체크. 10점 만점으로 평가하고 이유 설명.",
+      "input": "git diff",
+      "pass": 7,
+      "output": "reviews/injection-review.md"
+    }
+  ]
+}
