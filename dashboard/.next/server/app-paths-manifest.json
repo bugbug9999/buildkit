@@ -1,0 +1,10 @@
+{
+  "/page": "app/page.js",
+  "/pipelines/page": "app/pipelines/page.js",
+  "/settings/providers/page": "app/settings/providers/page.js",
+  "/tasks/page": "app/tasks/page.js",
+  "/history/page": "app/history/page.js",
+  "/pipelines/new/page": "app/pipelines/new/page.js",
+  "/guide/page": "app/guide/page.js",
+  "/history/[id]/page": "app/history/[id]/page.js"
+}

@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "buildkit-dashboard",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["/Users/bugbookee/Desktop/buildkit/dashboard/start-dev.sh"],
+      "port": 3000,
+      "cwd": "/Users/bugbookee/Desktop/buildkit/dashboard"
+    }
+  ]
+}
