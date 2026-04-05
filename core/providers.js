@@ -5,12 +5,14 @@ let anthropic;
 let gemini;
 let openai;
 
+const DEFAULT_CLAUDE_CLI = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin/claude';
 const DEFAULT_GEMINI_CLI = '/tmp/node-v22.14.0-darwin-arm64/bin/gemini';
 const DEFAULT_CODEX_CLI = '/tmp/node-v22.14.0-darwin-arm64/bin/codex';
 
 export const COST_PER_TOKEN = {
   'claude-sonnet-4-6': { input: 0.003 / 1000, output: 0.015 / 1000 },
   'claude-opus-4-6': { input: 0.015 / 1000, output: 0.075 / 1000 },
+  'claude-cli': { input: 0, output: 0 },
   'gemini-2.5-pro': { input: 0.00125 / 1000, output: 0.005 / 1000 },
   'gpt-4o': { input: 0.0025 / 1000, output: 0.01 / 1000 },
   codex: { input: 0, output: 0 },
@@ -19,6 +21,10 @@ export const COST_PER_TOKEN = {
 
 function createLogger(logger) {
   return typeof logger === 'function' ? logger : () => {};
+}
+
+export function getClaudeCliPath() {
+  return process.env.CLAUDE_CLI || DEFAULT_CLAUDE_CLI;
 }
 
 export function getGeminiCliPath() {
@@ -53,6 +59,10 @@ export async function initProviders(options = {}) {
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
     anthropic = new Anthropic();
     log('✅ Claude SDK ready');
+  } else if (commandExists(getClaudeCliPath())) {
+    log('✅ Claude CLI ready (구독 fallback)');
+  } else {
+    log('⚠️ Claude: SDK/CLI 없음');
   }
 
   if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) {
@@ -79,14 +89,16 @@ export async function initProviders(options = {}) {
 }
 
 export function getProviderStatus() {
+  const claudeCli = commandExists(getClaudeCliPath());
   const geminiCli = commandExists(getGeminiCliPath());
   const codexCli = commandExists(getCodexCliPath());
 
   return {
     claude: {
-      available: Boolean(anthropic),
-      mode: anthropic ? 'sdk' : null,
-      models: anthropic ? ['claude-sonnet-4-6', 'claude-opus-4-6'] : [],
+      available: Boolean(anthropic) || claudeCli,
+      mode: anthropic ? 'sdk' : claudeCli ? 'cli' : null,
+      cli_path: claudeCli ? getClaudeCliPath() : null,
+      models: anthropic || claudeCli ? ['claude-sonnet-4-6', 'claude-opus-4-6'] : [],
     },
     gemini: {
       available: Boolean(gemini) || geminiCli,
@@ -114,21 +126,33 @@ export async function callAI(model, prompt, options = {}) {
   const startTime = Date.now();
   const onProgress = typeof options.onProgress === 'function' ? options.onProgress : () => {};
   const resolvedModel = resolveModelId(model);
+  let billingModel = resolvedModel;
 
   let result = '';
   let inputTokens = 0;
   let outputTokens = 0;
 
   if (resolvedModel.startsWith('claude')) {
-    if (!anthropic) throw new Error('ANTHROPIC_API_KEY 없음');
-    const resp = await anthropic.messages.create({
-      model: resolvedModel,
-      max_tokens: options.maxTokens || 4096,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    result = resp.content[0].text;
-    inputTokens = resp.usage?.input_tokens || 0;
-    outputTokens = resp.usage?.output_tokens || 0;
+    if (anthropic) {
+      const resp = await anthropic.messages.create({
+        model: resolvedModel,
+        max_tokens: options.maxTokens || 4096,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      result = resp.content[0].text;
+      inputTokens = resp.usage?.input_tokens || 0;
+      outputTokens = resp.usage?.output_tokens || 0;
+    } else {
+      onProgress('📡 Claude CLI fallback (구독)');
+      const tmpFile = '/tmp/buildkit-claude-prompt.txt';
+      fs.writeFileSync(tmpFile, prompt);
+      result = execSync(
+        `cat "${tmpFile}" | ${getClaudeCliPath()} -p --output-format text`,
+        { encoding: 'utf-8', timeout: 300000 }
+      );
+      inputTokens = Math.ceil(prompt.length / 4);
+      billingModel = 'claude-cli';
+    }
   } else if (resolvedModel.startsWith('gemini') || model === 'gemini') {
     if (gemini) {
       const m = gemini.getGenerativeModel({ model: resolvedModel === 'gemini-cli' ? 'gemini-2.5-pro' : resolvedModel });
@@ -184,6 +208,6 @@ export async function callAI(model, prompt, options = {}) {
     tokensUsed,
     elapsed,
     model: resolvedModel,
-    cost: calculateCost(resolvedModel, inputTokens, outputTokens),
+    cost: calculateCost(billingModel, inputTokens, outputTokens),
   };
 }

@@ -3,7 +3,7 @@
 import fs from 'fs';
 import { execSync } from 'child_process';
 import { PipelineEngine, TaskEngine } from './core/engine.js';
-import { getCodexCliPath, getGeminiCliPath, getProviderStatus, initProviders } from './core/providers.js';
+import { getClaudeCliPath, getCodexCliPath, getGeminiCliPath, getProviderStatus, initProviders } from './core/providers.js';
 
 function attachPipelineCliLogging(engine, stepsLength) {
   engine.on('execution:started', ({ pipelineName, codebase, totalSteps }) => {
@@ -111,10 +111,17 @@ async function main() {
   if (command === 'status') {
     const status = getProviderStatus();
     console.log('BuildKit v0.2.0');
-    console.log(`Claude: ${status.claude.available ? '✅ SDK' : '❌'}`);
+    let claudeCli = false;
 
     let geminiCli = false;
     let codexCli = false;
+
+    try {
+      execSync(`${getClaudeCliPath()} --version`, { encoding: 'utf-8', timeout: 5000 });
+      claudeCli = true;
+    } catch {
+      claudeCli = false;
+    }
 
     try {
       execSync(`${getGeminiCliPath()} --version`, { encoding: 'utf-8', timeout: 5000 });
@@ -130,6 +137,7 @@ async function main() {
       codexCli = false;
     }
 
+    console.log(`Claude: ${status.claude.mode === 'sdk' ? '✅ SDK' : claudeCli ? '✅ Claude CLI (구독)' : '❌'}`);
     console.log(`Gemini: ${status.gemini.mode === 'sdk' ? '✅ SDK' : geminiCli ? '✅ CLI (Ultra)' : '❌'}`);
     console.log(`OpenAI: ${status.openai.mode === 'sdk' ? '✅ SDK' : codexCli ? '✅ CLI (Codex)' : '❌'}`);
     return;
