@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Injection CRUD API",
+    "model": "codex",
+    "file": "src/routes/injection.ts",
+    "instruction": "Create a Fastify route plugin for GLP-1 injection tracking. The Prisma model 'Injection' already exists with fields: id, userId, drug (String), doseUnit (Float), site (String: 'abdomen'|'thigh'|'arm'), injectedAt (DateTime), memo (String?), createdAt. Implement: POST /api/injection (create with auth), GET /api/injections?range=30d (list user's injections within date range, default 30 days, ordered by injectedAt desc), PATCH /api/injection/:id (update own injection), DELETE /api/injection/:id (soft or hard delete own). Use request.userId from JWT auth (assume fastify-jwt plugin is registered). Validate: drug required, doseUnit > 0, site must be one of allowed values. Return { success: true, data: ... } format. Import prisma from '../lib/auth'.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/routes/meal.ts", "prisma/schema.prisma"]
+  },
+  {
+    "name": "Weight CRUD API",
+    "model": "codex",
+    "file": "src/routes/weight.ts",
+    "instruction": "Create a Fastify route plugin for weight logging. The Prisma model 'WeightLog' already exists with fields: id, userId, weightKg (Float), memo (String?), measuredAt (DateTime), createdAt. Implement: POST /api/weight (log weight, also update User.weightKg to latest value), GET /api/weights?range=30d (list user's weight logs within date range, ordered by measuredAt desc, include calculated fields: changeFromFirst, changeFromPrevious, progressToGoal using User.targetWeightKg), DELETE /api/weight/:id (delete own). Validate: weightKg between 20 and 300. Return { success: true, data: ... } format. Import prisma from '../lib/auth'.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/routes/meal.ts", "prisma/schema.prisma"]
+  },
+  {
+    "name": "Smart Alert Logic",
+    "model": "codex",
+    "file": "src/lib/smart-alert.ts",
+    "instruction": "Create a smart alert library that generates contextual health notifications for GLP-1 diet users. Export async function getAlerts(userId: string): Promise<Alert[]>. Alert type: { type: 'muscle_loss'|'overeating'|'dehydration'|'nudge', severity: 'warning'|'info', title: string, message: string, emoji: string }. Rules: 1) Muscle loss: if today's proteinG < user.weightKg * 1.0 AND current hour >= 17, warn about protein intake. 2) Overeating: if today's caloriesKcal > user's recommended daily * 1.1 (assume 1800 for women, 2200 for men, or use a default 2000). 3) Nudge: if no meal logged today and current hour >= 12, remind to log. Query DailySummary for today's data, query User for weight/goals. Import prisma from './auth'. Use timezone-aware date (KST, UTC+9).",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/lib/daily-summary.ts", "src/lib/quota.ts", "prisma/schema.prisma"]
+  },
+  {
+    "name": "Alert API Route",
+    "model": "codex",
+    "file": "src/routes/alert.ts",
+    "instruction": "Create a Fastify route plugin that exposes the smart alert system. Implement: GET /api/alerts (returns current alerts for authenticated user by calling getAlerts(userId) from '../lib/smart-alert'). Return { success: true, data: alerts }. Requires JWT authentication.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/routes/meal.ts", "src/lib/smart-alert.ts"]
+  },
+  {
+    "name": "Mobile Injection Screen",
+    "model": "codex",
+    "file": "mobile/app/injection.tsx",
+    "instruction": "Create a React Native (Expo) screen for GLP-1 injection logging. Use Expo Router. Show: 1) A form with drug selector (dropdown: 'Ozempic', 'Wegovy', 'Mounjaro', 'Saxenda'), dose input (numeric), injection site selector (abdomen/thigh/arm with body diagram or simple buttons), date picker, optional memo. 2) Below the form, show recent injection history (last 10) fetched from GET /api/injections. 3) Submit button calls POST /api/injection. Use Nativewind for styling (className prop). Import api client from '../src/lib/api'. Use Zustand or local useState for form state.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["mobile/app/(tabs)/log.tsx", "mobile/src/lib/api.ts"]
+  },
+  {
+    "name": "Mobile Weight Screen",
+    "model": "codex",
+    "file": "mobile/app/weight.tsx",
+    "instruction": "Create a React Native (Expo) screen for weight logging and tracking. Use Expo Router. Show: 1) A simple weight input form (numeric, kg) with date picker and optional memo. 2) Weight trend chart showing last 30 days (use a simple line representation or react-native-chart-kit if available). 3) Stats cards: current weight, change from start, progress to goal (%). 4) Recent weight log list (last 10 entries). Fetch from GET /api/weights?range=30d, submit via POST /api/weight. Use Nativewind for styling. Import api client from '../src/lib/api'.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["mobile/app/(tabs)/log.tsx", "mobile/src/lib/api.ts"]
+  },
+  {
+    "name": "Register new routes in server",
+    "model": "codex",
+    "file": "src/index.ts",
+    "instruction": "Register the new Fastify route plugins. Add imports and register calls for: 1) injection routes from './routes/injection' with prefix '/api', 2) weight routes from './routes/weight' with prefix '/api', 3) alert routes from './routes/alert' with prefix '/api'. Add them alongside the existing route registrations (meal, report, user, etc). Do NOT remove any existing code, only add the new registrations.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/index.ts"]
+  }
+]

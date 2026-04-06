@@ -56,12 +56,12 @@ export const PALETTE_ITEMS: Array<{
   role: string;
   model: string;
 }> = [
-  { type: 'ux', label: 'UX 기획', icon: '📋', role: 'CPO', model: 'sonnet' },
-  { type: 'architecture', label: '아키텍처', icon: '🏗️', role: 'Blueprint', model: 'sonnet' },
-  { type: 'code', label: '코드 생성', icon: '💻', role: 'Developer', model: 'gemini' },
+  { type: 'ux', label: 'UX 기획', icon: '📋', role: 'CPO', model: 'opus' },
+  { type: 'architecture', label: '아키텍처', icon: '🏗️', role: 'CTO', model: 'opus' },
+  { type: 'code', label: '코드 생성', icon: '💻', role: 'Developer', model: 'codex' },
   { type: 'review', label: '리뷰', icon: '🔍', role: 'Reviewer', model: 'sonnet' },
   { type: 'security', label: '보안 검토', icon: '🛡️', role: 'Security', model: 'sonnet' },
-  { type: 'test', label: '테스트 생성', icon: '🧪', role: 'Tester', model: 'gemini' },
+  { type: 'test', label: '테스트 생성', icon: '🧪', role: 'Tester', model: 'sonnet' },
   { type: 'custom', label: '커스텀', icon: '📝', role: 'Custom', model: 'sonnet' },
 ];
 

@@ -9,6 +9,9 @@ const DEFAULT_CLAUDE_CLI = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin/cla
 const DEFAULT_GEMINI_CLI = '/tmp/node-v22.14.0-darwin-arm64/bin/gemini';
 const DEFAULT_CODEX_CLI = '/tmp/node-v22.14.0-darwin-arm64/bin/codex';
 
+const NODE_BIN = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin';
+const CLI_ENV = { ...process.env, PATH: `${NODE_BIN}:${process.env.PATH || ''}` };
+
 export const COST_PER_TOKEN = {
   'claude-sonnet-4-6': { input: 0.003 / 1000, output: 0.015 / 1000 },
   'claude-opus-4-6': { input: 0.015 / 1000, output: 0.075 / 1000 },
@@ -45,7 +48,7 @@ export function resolveModelId(model) {
 
 function commandExists(command) {
   try {
-    execSync(`${command} --version`, { encoding: 'utf-8', timeout: 5000 });
+    execSync(`${command} --version`, { encoding: 'utf-8', timeout: 5000, env: CLI_ENV });
     return true;
   } catch {
     return false;
@@ -148,7 +151,7 @@ export async function callAI(model, prompt, options = {}) {
       fs.writeFileSync(tmpFile, prompt);
       result = execSync(
         `cat "${tmpFile}" | ${getClaudeCliPath()} -p --output-format text`,
-        { encoding: 'utf-8', timeout: 300000 }
+        { encoding: 'utf-8', timeout: 300000, env: CLI_ENV }
       );
       inputTokens = Math.ceil(prompt.length / 4);
       billingModel = 'claude-cli';
@@ -169,7 +172,7 @@ export async function callAI(model, prompt, options = {}) {
       fs.writeFileSync(tmpFile, prompt);
       result = execSync(
         `cat "${tmpFile}" | ${getGeminiCliPath()} -p "코드만 출력. 설명 불필요." -y --sandbox false -o text`,
-        { encoding: 'utf-8', timeout: 180000 }
+        { encoding: 'utf-8', timeout: 180000, env: CLI_ENV }
       );
       inputTokens = Math.ceil(prompt.length / 4);
     }
@@ -190,7 +193,7 @@ export async function callAI(model, prompt, options = {}) {
     const outFile = '/tmp/buildkit-codex-output.txt';
     execSync(
       `${getCodexCliPath()} exec --ephemeral --skip-git-repo-check -o "${outFile}" "$(cat "${tmpFile}")"`,
-      { encoding: 'utf-8', timeout: 180000 }
+      { encoding: 'utf-8', timeout: 180000, env: CLI_ENV }
     );
     result = fs.existsSync(outFile) ? fs.readFileSync(outFile, 'utf-8') : '';
     inputTokens = Math.ceil(prompt.length / 4);

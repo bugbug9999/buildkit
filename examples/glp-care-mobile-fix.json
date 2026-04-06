@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Mobile Injection Screen",
+    "model": "gemini",
+    "file": "mobile/app/injection.tsx",
+    "instruction": "Create a React Native (Expo) screen for GLP-1 injection logging. Use Expo Router. Show: 1) A form with drug selector (dropdown: 'Ozempic', 'Wegovy', 'Mounjaro', 'Saxenda'), dose input (numeric), injection site selector (abdomen/thigh/arm with simple buttons), date picker, optional memo. 2) Below the form, show recent injection history (last 10) fetched from GET /api/injections. 3) Submit button calls POST /api/injection. Use Nativewind for styling (className prop). Import api functions using wrappedFetch pattern from '../src/lib/api'. Use local useState for form state.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["mobile/app/(tabs)/log.tsx", "mobile/src/lib/api.ts"]
+  },
+  {
+    "name": "Mobile Weight Screen",
+    "model": "gemini",
+    "file": "mobile/app/weight.tsx",
+    "instruction": "Create a React Native (Expo) screen for weight logging and tracking. Use Expo Router. Show: 1) A simple weight input form (numeric, kg) with date picker and optional memo. 2) Stats cards: current weight, change from start, progress to goal (%). 3) Recent weight log list (last 10 entries). Fetch from GET /api/weights?range=30d, submit via POST /api/weight. Use Nativewind for styling (className prop). Import api functions using wrappedFetch pattern from '../src/lib/api'. Use local useState for form state.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["mobile/app/(tabs)/log.tsx", "mobile/src/lib/api.ts"]
+  }
+]

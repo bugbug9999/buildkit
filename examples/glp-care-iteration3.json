@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Register injection/weight/alert routes in app.ts",
+    "model": "codex",
+    "file": "src/app.ts",
+    "instruction": "Add 3 missing route imports and registrations to app.ts. Add these imports after the existing route imports (after line 16 'import internalRoutes'):\n\nimport injectionRoutes from './routes/injection.js';\nimport weightRoutes from './routes/weight.js';\nimport alertRoutes from './routes/alert.js';\n\nThen add these registrations after 'app.register(internalRoutes);' (after line 62):\n\napp.register(injectionRoutes);\napp.register(weightRoutes);\napp.register(alertRoutes);\n\nDo NOT remove or change any existing code. Only add the 3 imports and 3 register calls. Output the complete modified file.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/app.ts"]
+  },
+  {
+    "name": "Fix prisma import in injection.ts",
+    "model": "codex",
+    "file": "src/routes/injection.ts",
+    "instruction": "Fix the prisma import in this Fastify route file. REMOVE the line 'import prisma from '../lib/auth';' — this is WRONG. In this project, prisma is accessed via fastify.prisma (decorated by the prisma plugin). The route is a FastifyPluginAsync that receives 'fastify' as first argument. Replace ALL occurrences of bare 'prisma.' with 'fastify.prisma.' inside the route handlers. For example: 'prisma.injection.create(...)' becomes 'fastify.prisma.injection.create(...)'. Also ensure request.user.sub is used for userId (the JWT plugin sets request.user with sub field). The preHandler should be [fastify.authenticate]. Look at how meal.ts uses fastify.prisma for reference. Output the complete fixed file.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/routes/injection.ts", "src/routes/meal.ts", "src/plugins/prisma.ts"]
+  },
+  {
+    "name": "Fix prisma import in weight.ts",
+    "model": "codex",
+    "file": "src/routes/weight.ts",
+    "instruction": "Fix the prisma import in this Fastify route file. REMOVE the line 'import prisma from '../lib/auth';' — this is WRONG. In this project, prisma is accessed via fastify.prisma (decorated by the prisma plugin). Replace ALL occurrences of bare 'prisma.' with 'fastify.prisma.' inside the route handlers. Use request.user.sub for userId. The preHandler should be [fastify.authenticate]. Look at how meal.ts uses fastify.prisma for reference. Output the complete fixed file.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/routes/weight.ts", "src/routes/meal.ts", "src/plugins/prisma.ts"]
+  },
+  {
+    "name": "Fix prisma import in smart-alert.ts",
+    "model": "codex",
+    "file": "src/lib/smart-alert.ts",
+    "instruction": "Fix the prisma import in this library file. REMOVE the line 'import prisma from './auth';' — this is WRONG. Since this is a library (not a route), it cannot access fastify.prisma directly. Instead, change the getAlerts function signature to accept a prisma client as parameter: 'export async function getAlerts(prisma: PrismaClient, userId: string): Promise<Alert[]>'. Import PrismaClient type from '@prisma/client'. Replace ALL occurrences of bare 'prisma.' with the parameter 'prisma.' (which is already correct after the rename). The caller (alert.ts route) will pass fastify.prisma to this function. Output the complete fixed file.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/lib/smart-alert.ts", "src/lib/daily-summary.ts"]
+  },
+  {
+    "name": "Fix alert route to pass prisma to getAlerts",
+    "model": "codex",
+    "file": "src/routes/alert.ts",
+    "instruction": "Update the alert route to pass fastify.prisma to getAlerts. The getAlerts function now takes (prisma, userId) as parameters. Update the call from 'getAlerts(request.user.sub)' to 'getAlerts(fastify.prisma, request.user.sub)'. Also ensure the preHandler uses [fastify.authenticate]. Output the complete fixed file. Keep it as a FastifyPluginAsync with default export.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["src/routes/alert.ts", "src/routes/meal.ts"]
+  },
+  {
+    "name": "Add mobile API functions for injection/weight/alert",
+    "model": "codex",
+    "file": "mobile/src/lib/api.ts",
+    "instruction": "Add API functions for injection, weight, and alert endpoints to the existing api.ts file. Use the same wrappedFetch pattern and parseJsonOrThrow helper that already exists in this file. Add these functions at the end of the file (before the last closing bracket if any), do NOT remove existing code:\n\n1. Injection API:\n- createInjection(payload: {drug: string, doseUnit: number, site: string, injectedAt: string, memo?: string}): POST /api/injection\n- fetchInjections(range?: string): GET /api/injections?range={range||'30d'}\n- updateInjection(id: string, payload: Partial<{drug: string, doseUnit: number, site: string, injectedAt: string, memo?: string}>): PATCH /api/injection/{id}\n- deleteInjection(id: string): DELETE /api/injection/{id}\n\n2. Weight API:\n- createWeight(payload: {weightKg: number, memo?: string, measuredAt?: string}): POST /api/weight\n- fetchWeights(range?: string): GET /api/weights?range={range||'30d'}\n- deleteWeight(id: string): DELETE /api/weight/{id}\n\n3. Alert API:\n- fetchAlerts(): GET /api/alerts\n\nAll functions should use wrappedFetch and parseJsonOrThrow. Use the same async/export pattern as existing functions like createMealLog, fetchMealLogs etc. Output the COMPLETE file with all existing code preserved plus the new functions added at the end.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["mobile/src/lib/api.ts"]
+  },
+  {
+    "name": "Create mobile type definitions for injection/weight/alert",
+    "model": "codex",
+    "file": "mobile/src/types/injection.ts",
+    "instruction": "Create TypeScript type definitions for the injection feature. Define and export these interfaces:\n\nexport interface InjectionInput {\n  drug: string;\n  doseUnit: number;\n  site: 'abdomen' | 'thigh' | 'arm';\n  injectedAt: string;\n  memo?: string | null;\n}\n\nexport interface InjectionLog {\n  id: string;\n  userId: string;\n  drug: string;\n  doseUnit: number;\n  site: 'abdomen' | 'thigh' | 'arm';\n  injectedAt: string;\n  memo: string | null;\n  createdAt: string;\n}\n\nexport interface InjectionListResponse {\n  success: boolean;\n  data: InjectionLog[];\n}\n\nOutput the complete file.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["mobile/src/types/meal.ts"]
+  },
+  {
+    "name": "Create mobile weight type definitions",
+    "model": "codex",
+    "file": "mobile/src/types/weight.ts",
+    "instruction": "Create TypeScript type definitions for the weight feature. Define and export:\n\nexport interface WeightInput {\n  weightKg: number;\n  memo?: string | null;\n  measuredAt?: string;\n}\n\nexport interface WeightLog {\n  id: string;\n  userId: string;\n  weightKg: number;\n  memo: string | null;\n  measuredAt: string;\n  createdAt: string;\n}\n\nexport interface WeightListResponse {\n  success: boolean;\n  data: {\n    logs: WeightLog[];\n    changeFromFirst: number | null;\n    changeFromPrevious: number | null;\n    progressToGoal: number | null;\n  };\n}\n\nOutput the complete file.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["mobile/src/types/meal.ts"]
+  },
+  {
+    "name": "Create mobile alert type definitions",
+    "model": "codex",
+    "file": "mobile/src/types/alert.ts",
+    "instruction": "Create TypeScript type definitions for the alert feature. Define and export:\n\nexport interface Alert {\n  type: 'muscle_loss' | 'overeating' | 'dehydration' | 'nudge';\n  severity: 'warning' | 'info';\n  title: string;\n  message: string;\n  emoji: string;\n}\n\nexport interface AlertsResponse {\n  success: boolean;\n  data: Alert[];\n}\n\nOutput the complete file.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["mobile/src/types/meal.ts"]
+  },
+  {
+    "name": "Add injection/weight tabs to mobile navigation",
+    "model": "codex",
+    "file": "mobile/app/(tabs)/_layout.tsx",
+    "instruction": "Update the tab navigation to include injection and weight tracking screens. Currently there are 4 tabs: index(홈), log(기록), report(리포트), profile(프로필). Change to 5 tabs by replacing 'log' with an expanded layout. The new tab structure should be:\n\n1. index → 홈 (home icon)\n2. log → 기록 (book-open icon) — existing meal log\n3. injection → 투약 (activity icon) — GLP-1 injection tracking\n4. report → 리포트 (bar-chart icon)\n5. profile → 프로필 (user icon)\n\nWeight tracking should be accessible from the profile or home screen (not a separate tab to avoid overcrowding). Add the injection tab between log and report. Keep using Feather icons from @expo/vector-icons. Output the complete file.",
+    "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+    "context_files": ["mobile/app/(tabs)/_layout.tsx"]
+  }
+]

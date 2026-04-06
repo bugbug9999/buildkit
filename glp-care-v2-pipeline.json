@@ -1,0 +1,66 @@
+{
+  "project": "GLP-Care v2 — 온보딩 + 홈 탭 리디자인",
+  "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+  "steps": [
+    {
+      "step": "design",
+      "role": "아키텍처/CTO",
+      "model": "opus",
+      "prompt": "아래 기획서를 읽고, 구현에 필요한 파일 목록과 각 파일의 변경 사항을 정리해줘. 새로 만들 파일, 수정할 파일, 삭제할 파일을 구분해서. 특히 Prisma 마이그레이션 SQL, 새로운 API 엔드포인트, 모바일 컴포넌트 트리를 구체적으로 정리해.\n\n중요: 이 프로젝트는 Fastify 5 + TypeScript + Prisma + PostgreSQL 백엔드, Expo 52 + React Native + NativeWind v4 모바일앱이다.\n\n주의사항:\n- NativeWind className='flex-1'은 SafeAreaView/ScrollView에서 동작 안 함. style={{ flex: 1 }}을 사용할 것.\n- DateTimePicker 사용 금지 (Expo Go에서 크래시). TextInput 대체.\n- 모든 UI 텍스트는 한국어.\n- StyleSheet.create 또는 인라인 스타일 사용 권장 (NativeWind 불안정).",
+      "input": ["docs/SPEC-v2-onboarding-home.md"],
+      "output": "docs/DESIGN-v2.md"
+    },
+    {
+      "step": "backend-schema",
+      "role": "백엔드 개발자",
+      "model": "codex",
+      "prompt": "아래 설계서를 읽고 Prisma 스키마를 수정해.\n\n수행할 작업:\n1. prisma/schema.prisma에서 MealLog 모델에 필드 추가: mealType(String, default 'snack'), servingSize(String?), servingCount(Float? default 1), sourceType(String, default 'manual'), externalFoodId(String?)\n2. User 모델에 필드 추가: isGlp1User(Boolean, default false), goalPeriodDays(Int?), muscleMassKg(Float?), bodyFatPercent(Float?)\n3. 새 모델 Medication: id(uuid), userId(User 관계), name(String), frequency(String 'daily'|'weekly'), timesPerDay(Int?), timesPerWeek(Int?), timeOfDay(String?), createdAt, updatedAt. User와 1:N 관계.\n4. 새 모델 FoodCache: id(uuid), externalId(String unique), foodName(String), caloriesKcal(Float), proteinG(Float), carbsG(Float), fatG(Float), servingSize(String?), manufacturer(String?), source(String default 'mfds'), cachedAt(DateTime default now()).\n\n기존 prisma/schema.prisma 파일을 읽고 정확히 수정해. 코드만 출력.",
+      "input": ["design", "docs/SPEC-v2-onboarding-home.md"],
+      "files": ["prisma/schema.prisma"],
+      "output": "code",
+      "verify": "prisma-validate"
+    },
+    {
+      "step": "backend-api",
+      "role": "백엔드 개발자",
+      "model": "codex",
+      "prompt": "새로운 API 라우트 파일을 작성해.\n\nsrc/routes/food.ts — 음식 검색 프록시 API:\n- GET /api/food/search?q=햇반 → data.go.kr API (https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02) 호출\n- 응답 필드 매핑: FOOD_NM_KR→foodName, AMT_NUM1→caloriesKcal, AMT_NUM3→proteinG, AMT_NUM4→fatG, AMT_NUM6→carbsG, SERVING_SIZE→servingSize, MAKER_NM→manufacturer\n- FoodCache 테이블에 캐싱 (동일 검색어 24시간 캐시)\n- API 키는 환경변수 DATA_GO_KR_API_KEY\n- 에러 핸들링, 타임아웃 5초\n- Fastify 5 + TypeScript 패턴\n\n코드만 출력. 설명 불필요.",
+      "input": ["design"],
+      "files": ["src/routes/food.ts"],
+      "output": "code",
+      "verify": "tsc"
+    },
+    {
+      "step": "mobile-onboarding",
+      "role": "모바일 개발자",
+      "model": "codex",
+      "prompt": "mobile/app/(auth)/onboarding/glp1-setup.tsx 파일을 전면 재작성해.\n\n요구사항:\n- 3단계 퀴즈형 온보딩\n- Step 1: '다이어트 주사를 맞고 있나요?' YES/NO 큰 버튼 → (YES) 약물 선택(위고비(세마글루타이드)/마운자로(티르제파타이드)/삭센다(리라글루타이드)/잘 모르겠어요/기타 라디오버튼) + 복용 시작일(선택, TextInput YYYY-MM-DD) → '복용하는 약이나 영양제가 있나요?' YES/NO → (YES) 동적 카드: 약이름, 빈도(매일/매주 라디오), 횟수(하루N회 or 주N회), 시간(HH:MM). '+약/영양제 추가' 버튼으로 카드 추가. 각 카드에 X 삭제버튼.\n- Step 2: 신체정보 — 몸무게*(kg), 키*(cm), 나이*, 성별*(여성/남성 버튼) + 선택: 근육량(kg), 체지방률(%)\n- Step 3: 목표체중(kg) + 목표기간 칩(1개월/3개월/6개월/1년/직접입력) → 계산 결과 카드(일일 칼로리, 단백질, 감량속도) → '시작하기' 버튼 → router.replace('/(tabs)')\n\n기술 제약:\n- StyleSheet.create 사용. NativeWind className 절대 사용하지 마.\n- SafeAreaView/ScrollView에 style={{ flex: 1 }} 인라인.\n- DateTimePicker 사용 금지. TextInput만.\n- 모든 텍스트 한국어.\n- expo-router의 router.replace 사용.\n\n전체 파일 코드만 출력.",
+      "files": ["mobile/app/(auth)/onboarding/glp1-setup.tsx"],
+      "output": "code"
+    },
+    {
+      "step": "mobile-home",
+      "role": "모바일 개발자",
+      "model": "codex",
+      "prompt": "mobile/app/(tabs)/index.tsx 파일을 전면 재작성해.\n\n요구사항:\n- 상단: '오늘의 식단' + 날짜(4월 6일 일요일 형식)\n- 원형 칼로리 게이지(메인): SVG Circle 프로그레스, 중앙에 현재kcal/목표kcal 표시. react-native-svg의 Svg, Circle 사용.\n- 3열 가로 카드: 탄수화물/단백질/지방 각각 분리된 카드. 현재값/목표값 표시.\n- 기록하기 섹션: 아침(이모지🌅)/점심(🌤)/저녁(🌙)/간식(🍎) 4개 카드.\n  - 각 카드 우상단 '+' 버튼\n  - 비어있으면 '아직 기록이 없어요'\n  - 기록 있으면 음식명+칼로리 리스트 (최대3, 초과시 '+N개 더')\n  - 탭 시 router.push('/meal/add?mealType=breakfast') 등\n- useMealStore에서 todaySummary, fetchTodaySummary 사용\n- useEffect에서 fetchTodaySummary() 호출\n\n기존 import 전부 제거: ProteinGauge, MacroBar, StreakMilestonePanel, MealFAB, MilestoneCelebrationOverlay 모두 제거.\n\n기술 제약:\n- StyleSheet.create 사용. NativeWind className 절대 사용 금지.\n- SafeAreaView style={{ flex: 1 }}, ScrollView style={{ flex: 1 }}\n- 모든 텍스트 한국어\n\n전체 파일 코드만 출력.",
+      "files": ["mobile/app/(tabs)/index.tsx"],
+      "output": "code"
+    },
+    {
+      "step": "mobile-food-search",
+      "role": "모바일 개발자",
+      "model": "codex",
+      "prompt": "새 파일 2개 작성.\n\n파일 1: mobile/app/meal/add.tsx\n- expo-router 화면. useLocalSearchParams()로 mealType 읽기.\n- 상단 끼니 표시 (breakfast→아침 식사, lunch→점심 식사, dinner→저녁 식사, snack→간식)\n- '뭐 먹었어요?' 제목\n- 검색 TextInput (디바운스 500ms), 결과 FlatList\n- '+ 직접 등록' 버튼 → 인라인 폼 전환 (음식이름*, 칼로리*, 단백질, 탄수화물, 지방)\n- 검색 결과 항목 탭 → 수량 선택 (1인분 기준 + [-]N인분[+] + '기록에 추가')\n- useMealStore.logMeal() 호출 후 router.back()\n\n파일 2: mobile/src/lib/foodApi.ts\n- searchFood(query: string): Promise<FoodItem[]>\n- GET {API_BASE_URL}/api/food/search?q={query}\n- FoodItem 타입: { foodName, caloriesKcal, proteinG, carbsG, fatG, servingSize, manufacturer, externalId }\n\n기술 제약:\n- StyleSheet.create만. NativeWind className 금지.\n- SafeAreaView style={{ flex: 1 }}\n- 모든 텍스트 한국어\n\n코드만 출력. // === mobile/app/meal/add.tsx 와 // === mobile/src/lib/foodApi.ts 로 구분.",
+      "files": ["mobile/app/meal/add.tsx", "mobile/src/lib/foodApi.ts"],
+      "output": "code"
+    },
+    {
+      "step": "review",
+      "role": "코드 리뷰어",
+      "model": "sonnet",
+      "prompt": "아래 변경사항을 전부 리뷰해. 10점 만점으로 점수.\n\n리뷰 기준:\n1. 기획서(SPEC-v2)와의 일치도\n2. TypeScript 타입 안전성\n3. NativeWind className 사용 여부 확인 (사용하면 즉시 감점)\n4. 한국어 텍스트 완성도\n5. 에러 핸들링\n6. Prisma 스키마 정합성\n7. API 엔드포인트 일관성\n\n점수 형식: N/10\n8점 미만이면 구체적 수정사항 리스트.",
+      "input": ["git diff", "docs/SPEC-v2-onboarding-home.md"],
+      "pass": 8
+    }
+  ]
+}

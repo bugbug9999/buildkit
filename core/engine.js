@@ -278,21 +278,50 @@ export class TaskEngine extends EventEmitter {
 
     const results = await Promise.allSettled(
       tasks.map(async (task, index) => {
+        const taskName = task.name || task.file || task.do || `task-${index}`;
+        const taskModel = task.model || 'gemini';
+
         this.emit('step:started', {
           executionId: this.executionId,
           stepIndex: index,
-          stepName: task.file || task.do,
+          stepName: taskName,
           role: 'Task',
-          model: task.model || 'gemini',
-          requestedModel: task.model || 'gemini',
+          model: taskModel,
+          requestedModel: taskModel,
         });
 
-        const context = task.file
-          ? fs.readFileSync(path.resolve(task.codebase || '.', task.file), 'utf-8')
-          : '';
+        let context = '';
+        const basePath = task.codebase || '.';
 
-        const prompt = `파일: ${task.file}\n수정할 곳: ${task.line ? `${task.line}번 줄 근처` : '전체'}\n할 일: ${task.do}\n\n현재 코드:\n${context}\n\n수정된 전체 파일 코드만 출력. 설명 불필요.`;
-        const response = await callAI(task.model || 'gemini', prompt, task.options || {});
+        // Read target file if it exists
+        if (task.file) {
+          const filePath = path.resolve(basePath, task.file);
+          if (fs.existsSync(filePath)) {
+            context = fs.readFileSync(filePath, 'utf-8');
+          }
+        }
+
+        // Read context_files if provided
+        let contextFiles = '';
+        if (task.context_files && Array.isArray(task.context_files)) {
+          for (const cf of task.context_files) {
+            const cfPath = path.resolve(basePath, cf);
+            if (fs.existsSync(cfPath)) {
+              contextFiles += `\n--- ${cf} ---\n${fs.readFileSync(cfPath, 'utf-8')}\n`;
+            }
+          }
+        }
+
+        let prompt;
+        if (task.instruction) {
+          // New format: instruction-based task
+          prompt = `${task.instruction}\n\n${context ? `현재 코드 (${task.file}):\n${context}\n\n` : ''}${contextFiles ? `참고 파일:\n${contextFiles}\n\n` : ''}수정된 전체 파일 코드만 출력. 설명 불필요.`;
+        } else {
+          // Legacy format: do-based task
+          prompt = `파일: ${task.file}\n수정할 곳: ${task.line ? `${task.line}번 줄 근처` : '전체'}\n할 일: ${task.do}\n\n현재 코드:\n${context}\n\n수정된 전체 파일 코드만 출력. 설명 불필요.`;
+        }
+
+        const response = await callAI(taskModel, prompt, task.options || {});
         totalTokens += response.tokensUsed;
         totalCost += response.cost || 0;
 
@@ -303,10 +332,10 @@ export class TaskEngine extends EventEmitter {
         this.emit('step:completed', {
           executionId: this.executionId,
           stepIndex: index,
-          stepName: task.file || task.do,
+          stepName: taskName,
           role: 'Task',
           model: response.model,
-          requestedModel: task.model || 'gemini',
+          requestedModel: taskModel,
           tokensUsed: response.tokensUsed,
           inputTokens: response.inputTokens,
           outputTokens: response.outputTokens,

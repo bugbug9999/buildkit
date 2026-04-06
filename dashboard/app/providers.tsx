@@ -21,33 +21,54 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    Promise.all([
-      apiGet<ProvidersResponse>('/providers/status'),
-      apiGet<MonthlyStats>('/stats/monthly'),
-      apiGet<ModelStats>('/stats/by-model'),
-      apiGet<ExecutionListItem[]>('/executions?page=1&limit=20'),
-      apiGet<PipelineRecord[]>('/pipelines'),
-      apiGet<TaskSetRecord[]>('/task-sets'),
-    ])
-      .then(([providers, stats, modelStats, executions, pipelines, taskSets]) => {
-        if (!mounted) return;
-        setProviders(providers.data);
-        setMonthlyStats(stats.data);
-        setModelStats(modelStats.data);
-        setExecutions(executions.data, executions.pagination);
-        setPipelines(pipelines.data);
-        setTaskSets(taskSets.data);
+    async function loadInitialData() {
+      const errors: string[] = [];
 
-        const running = executions.data.find((item) => item.status === 'running');
-        if (running) {
-          apiGet<ExecutionDetail>(`/executions/${running.id}`)
-            .then((detail) => setExecutionDetail(detail.data))
-            .catch(() => null);
+      try {
+        const providers = await apiGet<ProvidersResponse>('/providers/status');
+        if (mounted) setProviders(providers.data);
+      } catch (e) { errors.push(`providers: ${e instanceof Error ? e.message : e}`); }
+
+      try {
+        const stats = await apiGet<MonthlyStats>('/stats/monthly');
+        if (mounted) setMonthlyStats(stats.data);
+      } catch (e) { errors.push(`stats: ${e instanceof Error ? e.message : e}`); }
+
+      try {
+        const modelStats = await apiGet<ModelStats>('/stats/by-model');
+        if (mounted) setModelStats(modelStats.data);
+      } catch (e) { errors.push(`modelStats: ${e instanceof Error ? e.message : e}`); }
+
+      try {
+        const executions = await apiGet<ExecutionListItem[]>('/executions?page=1&limit=20');
+        if (mounted) {
+          setExecutions(executions.data, executions.pagination);
+          const running = executions.data.find((item) => item.status === 'running');
+          if (running) {
+            apiGet<ExecutionDetail>(`/executions/${running.id}`)
+              .then((detail) => { if (mounted) setExecutionDetail(detail.data); })
+              .catch(() => null);
+          }
         }
-      })
-      .catch((error) => {
-        toast.error(error.message || '초기 데이터를 불러오지 못했습니다.');
-      });
+      } catch (e) { errors.push(`executions: ${e instanceof Error ? e.message : e}`); }
+
+      try {
+        const pipelines = await apiGet<PipelineRecord[]>('/pipelines');
+        if (mounted) setPipelines(pipelines.data);
+      } catch (e) { errors.push(`pipelines: ${e instanceof Error ? e.message : e}`); }
+
+      try {
+        const taskSets = await apiGet<TaskSetRecord[]>('/task-sets');
+        if (mounted) setTaskSets(taskSets.data);
+      } catch (e) { errors.push(`taskSets: ${e instanceof Error ? e.message : e}`); }
+
+      if (errors.length > 0) {
+        console.error('[BuildKit] Init errors:', errors);
+        toast.error(`데이터 로딩 실패 (${errors.length}건): ${errors[0]}`);
+      }
+    }
+
+    loadInitialData();
 
     const socket = getSocket();
     const eventNames = [
