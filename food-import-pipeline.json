@@ -1,0 +1,27 @@
+{
+  "project": "GLP-Care Food Import Script",
+  "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+  "steps": [
+    {
+      "step": "food-import-script",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "Create a Node.js script at scripts/import-food-data.ts that bulk-imports XLSX food nutrition data into the PostgreSQL FoodCache table via Prisma.\n\nFoodCache schema:\n  id: uuid PK\n  externalId: String @unique\n  foodName: String\n  caloriesKcal: Float\n  proteinG: Float\n  carbsG: Float\n  fatG: Float\n  servingSize: String?\n  manufacturer: String?\n  source: String @default(\"mfds\")\n  cachedAt: DateTime @default(now())\n\nThe script must handle 4 XLSX files from the data/ directory:\n\n1. '20251229_음식DB 19495건.xlsx' — 음식 (home-cooked food)\n   - Header row is row 0\n   - Column mapping: 식품코드→externalId, 식품명→foodName, 에너지(kcal)→caloriesKcal, 단백질(g)→proteinG, 탄수화물(g)→carbsG, 지방(g)→fatG, 영양성분함량기준량→servingSize, 업체명→manufacturer\n   - source: 'mfds_food'\n\n2. '20251230_건강기능식품DB_4380건 (3).xlsx' — 건강기능식품 (health supplements)\n   - Header row is row 0\n   - Column mapping: 식품코드→externalId, 식품명→foodName, 에너지(kcal)→caloriesKcal, 단백질(g)→proteinG, 탄수화물(g)→carbsG, 지방(g)→fatG, 영양성분제공단위량→servingSize, 제조사명→manufacturer\n   - source: 'mfds_supplement'\n\n3. '20260402_가공식품_268422건.xlsx' — 가공식품 (processed food, 268K rows, 162MB)\n   - Header row is row 0\n   - Column mapping: 식품코드→externalId, 식품명→foodName, 에너지(kcal)→caloriesKcal, 단백질(g)→proteinG, 탄수화물(g)→carbsG, 지방(g)→fatG, 영양성분함량기준량→servingSize\n   - No manufacturer column. source: 'mfds_processed'\n   - IMPORTANT: foodName values may have \\ufeff BOM prefix — strip it with .replace(/^\\ufeff/, '')\n\n4. '식품의약품안전처_가공식품 품목별 영양성분 DB_20221231.xlsx' — 가공식품 품목별 (older, small)\n   - Header row is row 0\n   - Column mapping: 식품코드→externalId, 가공식품품목명→foodName, 에너지\\r\\n(kcal)→caloriesKcal, 단백질\\r\\n(g)→proteinG, 탄수화물\\r\\n(g)→carbsG, 지방\\r\\n(g)→fatG, 영양성분기준용량→servingSize\n   - Column headers have \\r\\n in them. Match by checking if header includes the key text (e.g. '에너지' and 'kcal').\n   - source: 'mfds_processed_category'\n\nRequirements:\n1. Use 'xlsx' npm package (already installed) for small files (files 1, 2, 4)\n2. For the large 268K file (file 3), use Python openpyxl via child_process.execSync — stream rows in batches of 5000 to a temp JSON file, then read and insert. This avoids Node xlsx memory issues.\n3. Use Prisma upsert with externalId as unique key to avoid duplicates on re-run\n4. Batch upserts in transactions of 1000 rows for performance\n5. Skip rows where foodName is empty or caloriesKcal is 0/NaN\n6. Parse numeric fields: if empty string or non-numeric, default to 0\n7. Log progress: file name, total rows, inserted count, skipped count, time elapsed\n8. Run with: npx tsx scripts/import-food-data.ts\n9. Use the existing Prisma client from the project (import from generated client)\n10. Strip BOM (\\ufeff) from all foodName values\n11. At the end, log total food items in FoodCache table\n\nAlso create a helper Python script at scripts/read-large-xlsx.py that:\n- Takes file path, sheet name, and batch size as args\n- Reads the XLSX with openpyxl read_only=True\n- Outputs JSON batches to stdout, one JSON array per line (each line = one batch of rows as objects with keys: externalId, foodName, caloriesKcal, proteinG, carbsG, fatG, servingSize)\n- Handles BOM stripping in foodName\n\nOutput code only. No explanations.",
+      "files": [
+        "scripts/import-food-data.ts",
+        "scripts/read-large-xlsx.py"
+      ],
+      "output": "code",
+      "verify": "tsc --noEmit scripts/import-food-data.ts || true"
+    },
+    {
+      "step": "review-import-script",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "Review the food import script at scripts/import-food-data.ts and scripts/read-large-xlsx.py.\n\nCheck for:\n1. Correct column mapping for all 4 XLSX files\n2. Proper error handling (file not found, parse errors, DB connection)\n3. Memory efficiency for the 268K row file\n4. Proper BOM stripping\n5. Transaction batching correctness\n6. Prisma upsert logic with externalId\n7. Numeric parsing edge cases (empty strings, non-numeric values like '-' or '')\n8. Python script correctness (openpyxl streaming, JSON output format)\n\nScore 1-10. Point out any bugs or issues.",
+      "input": ["food-import-script"],
+      "output": "scripts/import-review.md",
+      "pass": 7
+    }
+  ]
+}

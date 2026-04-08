@@ -1,0 +1,24 @@
+{
+  "project": "GLP-Care Meal Screen Redesign",
+  "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+  "steps": [
+    {
+      "step": "implement",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "Rewrite mobile/app/meal/add.tsx with a clean, modern design. Read the current file first.\n\nFix these problems:\n1. ALL 3 modes (search, detail, manual) MUST wrap in SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}\n2. Replace ugly #4CAF50 with #10B981 everywhere\n3. Add proper card shadows to all content blocks\n4. Detail mode: show nutrients in a 2x2 colored grid (cal=#F59E0B, protein=#10B981, carbs=#3B82F6, fat=#EF4444)\n5. Search mode header: title left, '+ 직접 등록' right as small green text\n6. Results/recent items: white card style with rounded corners\n7. Serving counter: bigger pill-shaped buttons\n\nStyle constants:\n- BG='#F8FAFC', CARD='#FFFFFF', PRIMARY='#10B981'\n- TEXT='#0F172A', TEXT2='#64748B'\n- SHADOW={ shadowColor:'#000', shadowOpacity:0.06, shadowRadius:8, shadowOffset:{width:0,height:2}, elevation:3 }\n\nKeep all existing functionality intact. Keep imports from foodApi and recentFoods. Output code only.",
+      "files": ["mobile/app/meal/add.tsx"],
+      "output": "code",
+      "verify": "cd mobile && npx tsc --noEmit 2>&1 | head -20 || true"
+    },
+    {
+      "step": "review",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "Review mobile/app/meal/add.tsx redesign. Check: 1) SafeAreaView on ALL 3 modes 2) Color #10B981 not #4CAF50 3) Card shadows 4) Nutrient grid colored 5) Korean text 6) No className on SafeAreaView. Score 1-10. SafeAreaView missing = score 0.",
+      "input": ["implement"],
+      "output": "docs/meal-redesign-review.md",
+      "pass": 7
+    }
+  ]
+}

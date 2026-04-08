@@ -1,0 +1,35 @@
+{
+  "project": "GLP-Care Food Search UX Overhaul",
+  "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+  "steps": [
+    {
+      "step": "cpo-review",
+      "role": "CPO",
+      "model": "opus",
+      "prompt": "You are the CPO reviewing a UX change request for the GLP-Care meal logging screen (mobile/app/meal/add.tsx).\n\nCurrent state:\n- Search bar at top\n- '+ 직접 등록' button below search bar (takes full width, wastes vertical space)\n- Search results appear below when typing\n- When no query: shows '음식을 검색해 보세요.' empty state\n- Food search calls localhost:3200/api/food/search (29만건 FoodCache DB, no auth required)\n\nRequested changes:\n1. Move '직접 등록' to top-right corner as a small icon/text button (next to the title or in the header area)\n2. Below search bar, show '최근 검색' section with last 10 searched foods (using AsyncStorage for persistence)\n3. When user types in search bar → hide recent searches, show DB search results\n4. When search bar is empty → show recent searches again\n\nReview this UX plan and produce a DETAILED implementation spec. Consider:\n- Where exactly should '직접 등록' go? (right side of '뭐 먹었어요?' title row? or right side of header with back button?)\n- Recent searches: store food items (name + nutrients) or just search query strings?\n- How many recent items to show? (requested: 10)\n- Should tapping a recent item go directly to detail view or fill the search bar?\n- Any edge cases (first-time user with no recent searches, clearing recent history)\n- AsyncStorage key naming\n\nTech constraints:\n- React Native + Expo 52, StyleSheet.create (no NativeWind className on SafeAreaView/ScrollView)\n- All UI text in Korean\n- No DateTimePicker\n\nOutput a precise implementation spec document. No code.",
+      "output": "docs/food-search-ux-spec.md"
+    },
+    {
+      "step": "implement",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "Read the CPO spec at docs/food-search-ux-spec.md and implement the changes.\n\nFiles to modify:\n1. mobile/app/meal/add.tsx — Main meal add screen\n2. mobile/src/lib/foodApi.ts — Already updated to use localhost:3200, keep as-is\n3. mobile/src/lib/recentFoods.ts — NEW: AsyncStorage helper for recent food searches\n\nKey requirements:\n- Move '+ 직접 등록' button from below search bar to top-right of the header (next to title '뭐 먹었어요?')\n- Add a '최근 검색' section below search bar showing last 10 food items with name + calories\n- Store recent foods in AsyncStorage when user selects a food from search results\n- Tapping a recent food item should go directly to detail view (same as tapping a search result)\n- When typing in search bar: hide recent, show search results from API\n- When search bar empty: show recent items\n- Empty state for first-time users: '아직 검색 기록이 없어요'\n\nTech constraints:\n- Use StyleSheet.create only (no className/NativeWind on SafeAreaView/ScrollView)\n- All text in Korean\n- AsyncStorage key: '@glp_recent_foods'\n- Keep existing detail view and manual entry modes working\n- foodApi.ts is already configured: localhost:3200/api/food/search, returns { data: FoodItem[] }\n\nOutput code only. No explanations.",
+      "input": ["cpo-review"],
+      "files": [
+        "mobile/app/meal/add.tsx",
+        "mobile/src/lib/recentFoods.ts"
+      ],
+      "output": "code",
+      "verify": "cd mobile && npx tsc --noEmit 2>&1 | head -20 || true"
+    },
+    {
+      "step": "review",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "Review the changes to mobile/app/meal/add.tsx and the new mobile/src/lib/recentFoods.ts.\n\nCheck:\n1. '직접 등록' correctly moved to header top-right (not a full-width button anymore)\n2. Recent foods section shows below search bar when query is empty\n3. AsyncStorage read/write is correct (proper JSON parse/stringify, error handling)\n4. Tapping recent food goes to detail view\n5. Search results replace recent foods when typing\n6. No NativeWind className on SafeAreaView/ScrollView (use style prop)\n7. All UI text is Korean\n8. No broken imports or missing dependencies\n9. Existing detail and manual modes still work\n10. Edge cases: empty recent list, AsyncStorage failure\n\nScore 1-10. If score < 7, explain what needs fixing.",
+      "input": ["implement"],
+      "output": "docs/food-search-review.md",
+      "pass": 7
+    }
+  ]
+}

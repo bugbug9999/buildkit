@@ -1,0 +1,46 @@
+{
+  "project": "GLP-Care v2 — codex 재작업 (누락 파일 + className 수정)",
+  "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default",
+  "steps": [
+    {
+      "step": "food-api-route",
+      "role": "백엔드 개발자",
+      "model": "codex",
+      "prompt": "src/routes/food.ts 파일을 새로 생성해. Fastify 5 + TypeScript.\n\nimport { FastifyPluginAsync } from 'fastify';\n\nGET /api/food/search?q=햇반\n- data.go.kr API 호출: https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02\n- params: serviceKey=process.env.DATA_GO_KR_API_KEY, pageNo=1, numOfRows=20, type=json, FOOD_NM_KR=q\n- 응답의 body.items 배열을 매핑: FOOD_NM_KR→foodName, AMT_NUM1→caloriesKcal(parseFloat), AMT_NUM3→proteinG, AMT_NUM4→fatG, AMT_NUM6→carbsG, SERVING_SIZE→servingSize, MAKER_NM→manufacturer\n- FoodCache 테이블에 upsert (externalId = FOOD_CD || foodName)\n- 타임아웃 5초 (AbortController), 에러시 { items: [] } 반환\n- preHandler: [fastify.authenticate]\n- export default로 FastifyPluginAsync 내보내기\n\n코드만 출력. 설명 불필요.",
+      "files": ["src/routes/food.ts"],
+      "output": "code"
+    },
+    {
+      "step": "home-tab",
+      "role": "모바일 개발자",
+      "model": "codex",
+      "prompt": "mobile/app/(tabs)/index.tsx를 전면 재작성해.\n\n요구사항:\n- 상단: '오늘의 식단' Text(fontSize 28 bold) + 날짜(new Date()로 'N월 N일 X요일' 포맷, 요일은 ['일','월','화','수','목','금','토'])\n- 원형 칼로리 게이지: import Svg, Circle from 'react-native-svg'. radius=90, strokeWidth=12, cx=100,cy=100. 배경 #E2E8F0 원 + 진행 #0F766E 원(strokeDasharray+strokeDashoffset). 중앙 View에 현재kcal(fontSize 36 bold) + '/목표kcal'(fontSize 14 gray).\n- 3열 가로 카드(flexDirection:'row', gap:12): 탄수화물(#F59E0B), 단백질(#10B981), 지방(#F43F5E). 각 카드: 라벨, 현재g(fontSize 20 bold), /목표g(fontSize 12).\n- '기록하기' 섹션 헤더(fontSize 18 semibold, marginTop 24)\n- 4개 끼니 카드: [{key:'breakfast',emoji:'🌅',label:'아침 식사'},{key:'lunch',emoji:'🌤',label:'점심 식사'},{key:'dinner',emoji:'🌙',label:'저녁 식사'},{key:'snack',emoji:'🍎',label:'간식'}]. 각 카드: 좌측 이모지+라벨, 우측 '+' TouchableOpacity(fontSize 24). 내부에 해당 끼니 음식 리스트(최대3개 표시, 초과시 '+N개 더'). 비어있으면 '아직 기록이 없어요'(color:#94A3B8). 카드 탭시 router.push(`/meal/add?mealType=${key}`).\n- useMealStore에서 todaySummary, fetchTodaySummary import. useEffect(()=>{ fetchTodaySummary() },[]).\n- todaySummary?.summary에서 totalCaloriesKcal 등 읽기. meals는 todaySummary?.meals?.breakfast || [] 등.\n\n중요: StyleSheet.create만 사용. className 절대 사용 금지. SafeAreaView/ScrollView에 style={{ flex: 1 }} 인라인. 모든 텍스트 한국어. expo-router에서 useRouter import.\n\n전체 파일 코드만 출력.",
+      "files": ["mobile/app/(tabs)/index.tsx"],
+      "output": "code"
+    },
+    {
+      "step": "food-search-screen",
+      "role": "모바일 개발자",
+      "model": "codex",
+      "prompt": "mobile/app/meal/add.tsx 파일을 새로 생성해. Expo 52 + React Native.\n\nimport: useState, useEffect, useCallback from react. View, Text, TextInput, TouchableOpacity, FlatList, SafeAreaView, StyleSheet, ActivityIndicator from react-native. useLocalSearchParams, useRouter from expo-router. useMealStore from ../../src/store/mealStore. searchFood, FoodItem from ../../src/lib/foodApi.\n\nconst MEAL_LABELS: Record<string,string> = { breakfast:'아침 식사', lunch:'점심 식사', dinner:'저녁 식사', snack:'간식' };\n\n상태: mode('search'|'manual'|'detail'), query(string), results(FoodItem[]), isSearching(bool), selectedFood(FoodItem|null), servingCount(number, default 1), manualForm({name:'',cal:'',protein:'',carbs:'',fat:''}).\n\n디바운스: useEffect에서 query 변경시 500ms setTimeout으로 searchFood(query) 호출. cleanup으로 clearTimeout.\n\nmode=search: SafeAreaView(flex:1 bg #F8FAFC). 상단 '뭐 먹었어요?' 제목 + MEAL_LABELS[mealType]. 검색 TextInput(placeholder '음식 검색...'). '+ 직접 등록' 버튼(onPress setMode manual). FlatList results. 각 항목: foodName bold + 'caloriesKcal kcal | 단proteinG 탄carbsG 지fatG'. onPress → setSelectedFood, setMode detail.\n\nmode=manual: 폼. 음식이름 TextInput, 칼로리 TextInput(keyboardType numeric), 단백질, 탄수화물, 지방 TextInput들. '등록하기' 버튼 → logMeal({foodName:name, caloriesKcal:parseFloat(cal)||0, proteinG:parseFloat(protein)||0, carbsG:parseFloat(carbs)||0, fatG:parseFloat(fat)||0, mealType, sourceType:'manual'}) → Alert 성공 → router.back().\n\nmode=detail: selectedFood 정보 카드. 수량: [-](onPress max(1,count-1)) 숫자 [+](onPress count+1). '기록에 추가' 버튼 → logMeal({foodName:selectedFood.foodName, caloriesKcal:selectedFood.caloriesKcal*servingCount, proteinG:selectedFood.proteinG*servingCount, carbsG:selectedFood.carbsG*servingCount, fatG:selectedFood.fatG*servingCount, mealType, sourceType:'search', servingCount}) → router.back().\n\nStyleSheet.create만 사용. className 절대 금지. 한국어. 전체 파일 코드만 출력.",
+      "files": ["mobile/app/meal/add.tsx"],
+      "output": "code"
+    },
+    {
+      "step": "food-api-client",
+      "role": "모바일 개발자",
+      "model": "codex",
+      "prompt": "mobile/src/lib/foodApi.ts 파일을 새로 생성해.\n\n내용:\nimport { getAccessToken } from './auth';\n\nconst API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3001';\n\nexport interface FoodItem {\n  foodName: string;\n  caloriesKcal: number;\n  proteinG: number;\n  carbsG: number;\n  fatG: number;\n  servingSize?: string;\n  manufacturer?: string;\n  externalId?: string;\n}\n\nexport async function searchFood(query: string): Promise<FoodItem[]> {\n  if (!query.trim()) return [];\n  try {\n    const token = await getAccessToken();\n    const res = await fetch(\n      `${API_BASE_URL}/api/food/search?q=${encodeURIComponent(query)}`,\n      { headers: { Authorization: `Bearer ${token}` } }\n    );\n    if (!res.ok) return [];\n    const data = await res.json();\n    return data.items || [];\n  } catch {\n    return [];\n  }\n}\n\n이 파일 그대로 출력. 수정 불필요.",
+      "files": ["mobile/src/lib/foodApi.ts"],
+      "output": "code"
+    },
+    {
+      "step": "review",
+      "role": "코드 리뷰어",
+      "model": "sonnet",
+      "prompt": "변경사항 리뷰. 10점 만점. className 사용시 즉시 감점. N/10 형식.",
+      "input": ["git diff", "docs/SPEC-v2-onboarding-home.md"],
+      "pass": 8
+    }
+  ]
+}

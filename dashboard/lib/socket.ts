@@ -2,7 +2,7 @@
 
 import { io, type Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3100';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3160';
 
 let socket: Socket | null = null;
 

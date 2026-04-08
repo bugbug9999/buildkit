@@ -1,0 +1,23 @@
+{
+  "project": "BuildKit CLI-to-Dashboard Sync",
+  "codebase": "/Users/bugbookee/Desktop/buildkit",
+  "steps": [
+    {
+      "step": "implement",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "Read buildkit.js and server/db/db.js.\n\nTask: Make CLI executions (buildkit.js run/task) record to SQLite so the dashboard can see them.\n\nThe DB API already exists in server/db/db.js with these methods:\n- createExecution({ id, pipeline_id, task_set_id, mode, status, total_tokens, total_cost, started_at })\n- seedExecutionSteps(executionId, steps)\n- markExecutionStepStarted(executionId, stepIndex, { stepName, role, model })\n- markExecutionStepCompleted(executionId, stepIndex, { model, inputTokens, outputTokens, cost, elapsed, outputText, outputPath })\n- markExecutionStepFailed(executionId, stepIndex, { error })\n- syncExecutionTotals(executionId)\n- completeExecution(executionId)\n- failExecution(executionId, error)\n\nModify buildkit.js to:\n1. Import createDb from './server/db/db.js'\n2. Initialize db in main() after initProviders()\n3. In runPipeline(): create a new execution via db.createExecution(), seedExecutionSteps(), then hook engine events to db methods\n4. In runTask(): same pattern with mode='task'\n5. Map engine events to DB calls:\n   - 'execution:started' → db.createExecution + db.seedExecutionSteps\n   - 'step:started' → db.markExecutionStepStarted\n   - 'step:completed' → db.markExecutionStepCompleted + db.syncExecutionTotals\n   - 'step:failed' → db.markExecutionStepFailed\n   - 'execution:completed' → db.completeExecution\n   - 'execution:failed' → db.failExecution\n6. Generate execution ID with randomUUID()\n7. Also save the pipeline name in the pipelines table if it doesn't exist (use db.createPipeline or db.upsertPipeline if available, otherwise skip)\n\nKeep ALL existing console logging. Just ADD db recording alongside it.\nDo NOT modify server/db/db.js — use its API as-is.\nThe db instance should be created with: createDb({ dbPath: path.resolve(process.cwd(), 'server/db/buildkit.sqlite') })\n\nOutput the complete modified buildkit.js. Code only, no explanations.",
+      "files": ["buildkit.js"],
+      "output": "code"
+    },
+    {
+      "step": "review",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "Review buildkit.js changes. Check: 1) createDb imported and initialized 2) execution created on start 3) steps seeded 4) step events mapped to DB calls 5) execution completed/failed recorded 6) existing console logging preserved 7) no modifications to db.js. Score 1-10.",
+      "input": ["implement"],
+      "output": "docs/cli-db-sync-review.md",
+      "pass": 7
+    }
+  ]
+}

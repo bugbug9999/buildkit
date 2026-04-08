@@ -41,7 +41,7 @@ echo $OPENAI_API_KEY     # 비어있어야 함
 |---|---|---|---|
 | UX 기획 | CPO | `"opus"` | claude CLI (opus) |
 | 아키텍처/설계 | CTO | `"opus"` | claude CLI (opus) |
-| 코드 생성 | Developer | `"codex"` | codex CLI |
+| 코드 생성 | Developer | `"codex"` | codex CLI **전용**. sonnet으로 개발 절대 금지. |
 | 코드 리뷰 | Reviewer | `"sonnet"` | claude CLI (sonnet) |
 | 보안 검토 | Security | `"sonnet"` | claude CLI (sonnet) |
 | 테스트 생성 | Tester | `"sonnet"` | claude CLI (sonnet) |
@@ -78,12 +78,23 @@ echo $OPENAI_API_KEY     # 비어있어야 함
 
 ```
 Claude CLI: /Users/bugbookee/.nvm/versions/node/v22.22.1/bin/claude
-Codex CLI:  /tmp/node-v22.14.0-darwin-arm64/bin/codex
+Codex CLI:  /Users/bugbookee/.nvm/versions/node/v22.22.1/bin/codex
 Gemini CLI: /tmp/node-v22.14.0-darwin-arm64/bin/gemini
 Node.js:    /Users/bugbookee/.nvm/versions/node/v22.22.1/bin/node
 ```
 
-## 6. 프로젝트별 기술 제약 (GLP-Care)
+## 6. 절대 규칙
+
+- **sonnet에게 코드 생성(개발) 시키지 않는다.** sonnet은 리뷰/보안/테스트 전용.
+- 코드 생성은 반드시 codex. 타임아웃 나면 타임아웃 늘려서 재시도. sonnet 폴백 금지.
+- codex 타임아웃: 600초 (providers.js에서 설정)
+- **코드 수정/생성은 항상 BuildKit으로 한다.** 서브에이전트/직접 코딩 금지.
+- 작업 규모에 따라 스텝을 줄여 토큰 절약:
+  - **소규모 핫픽스** (1~2파일 단순수정): CTO 빼고 `codex→sonnet` 2스텝
+  - **중규모** (3~5파일): `opus(설계)→codex→sonnet` 3스텝
+  - **대규모** (5파일+): 풀 파이프라인
+
+## 7. 프로젝트별 기술 제약 (GLP-Care)
 
 - NativeWind `className="flex-1"` → SafeAreaView/ScrollView에서 동작 안 함. `style={{ flex: 1 }}` 사용
 - DateTimePicker 사용 금지 (Expo Go 크래시) → TextInput 대체

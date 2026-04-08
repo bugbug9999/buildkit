@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { PauseCircle, RotateCcw } from 'lucide-react';
@@ -12,14 +12,32 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiGet, apiPost } from '@/lib/api';
 import { useAppStore } from '@/lib/store';
-import type { ExecutionDetail } from '@/lib/types';
+import type { ExecutionDetail, ExecutionLogEntry } from '@/lib/types';
 import { formatCurrency, formatDuration, formatNumber, statusLabel } from '@/lib/utils';
+
+function useExecutionDetail(executionId: string) {
+  const detailRef = useRef<ExecutionDetail | null>(null);
+  const logsRef = useRef<ExecutionLogEntry[]>([]);
+
+  const detail = useAppStore((state) => {
+    const d = state.executionDetails[executionId];
+    if (d !== undefined) detailRef.current = d;
+    return detailRef.current;
+  });
+
+  const logs = useAppStore((state) => {
+    const l = state.executionLogs[executionId];
+    if (l !== undefined) logsRef.current = l;
+    return logsRef.current;
+  });
+
+  return { detail, logs };
+}
 
 export function ExecutionMonitor() {
   const params = useParams<{ id: string }>();
   const executionId = params.id;
-  const detail = useAppStore((state) => state.executionDetails[executionId]);
-  const logs = useAppStore((state) => state.executionLogs[executionId] || []);
+  const { detail, logs } = useExecutionDetail(executionId);
   const setExecutionDetail = useAppStore((state) => state.setExecutionDetail);
   const [openSteps, setOpenSteps] = useState<Record<number, boolean>>({});
 

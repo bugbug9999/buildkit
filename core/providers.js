@@ -7,7 +7,7 @@ let openai;
 
 const DEFAULT_CLAUDE_CLI = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin/claude';
 const DEFAULT_GEMINI_CLI = '/tmp/node-v22.14.0-darwin-arm64/bin/gemini';
-const DEFAULT_CODEX_CLI = '/tmp/node-v22.14.0-darwin-arm64/bin/codex';
+const DEFAULT_CODEX_CLI = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin/codex';
 
 const NODE_BIN = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin';
 const CLI_ENV = { ...process.env, PATH: `${NODE_BIN}:${process.env.PATH || ''}` };
@@ -193,7 +193,7 @@ export async function callAI(model, prompt, options = {}) {
     const outFile = '/tmp/buildkit-codex-output.txt';
     execSync(
       `${getCodexCliPath()} exec --ephemeral --skip-git-repo-check -o "${outFile}" "$(cat "${tmpFile}")"`,
-      { encoding: 'utf-8', timeout: 180000, env: CLI_ENV }
+      { encoding: 'utf-8', timeout: 600000, env: CLI_ENV }
     );
     result = fs.existsSync(outFile) ? fs.readFileSync(outFile, 'utf-8') : '';
     inputTokens = Math.ceil(prompt.length / 4);
