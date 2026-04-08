@@ -291,7 +291,13 @@ export function createDb(options = {}) {
     },
 
     getExecution(id) {
-      const execution = db.prepare('SELECT * FROM executions WHERE id = ?').get(id);
+      const execution = db.prepare(`
+        SELECT executions.*, pipelines.name AS pipeline_name, task_sets.name AS task_set_name
+        FROM executions
+        LEFT JOIN pipelines ON pipelines.id = executions.pipeline_id
+        LEFT JOIN task_sets ON task_sets.id = executions.task_set_id
+        WHERE executions.id = ?
+      `).get(id);
       if (!execution) return null;
       const steps = db.prepare(`
         SELECT step_index, step_name, role, model, status, input_tokens, output_tokens, cost,

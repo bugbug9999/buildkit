@@ -1,0 +1,23 @@
+{
+  "project": "BuildKit Dashboard - Execution Flow Visualization",
+  "codebase": "/Users/bugbookee/Desktop/buildkit",
+  "steps": [
+    {
+      "step": "implement",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "Read these files:\n- dashboard/components/dashboard/current-execution-card.tsx\n- dashboard/components/pipeline-builder/pipeline-node.tsx\n- dashboard/lib/types.ts (for ExecutionDetail, ExecutionStep types)\n\nTask: Replace the plain step list in current-execution-card.tsx with a visual pipeline flow diagram using @xyflow/react (already installed).\n\nThe current card shows steps as flat rows. Replace with a vertical flow diagram like the pipeline builder, but showing LIVE execution status per node.\n\nDesign:\n1. Top node: project name + codebase (variant='start')\n2. Middle nodes: one per step, showing step_name, role, model\n3. Bottom node: '끝' with git commit status (variant='end')\n4. Nodes connected with edges top-to-bottom\n5. Each step node shows live status with colors:\n   - pending: gray border, muted text\n   - running: amber/yellow border, pulse animation ring\n   - completed: green border, green dot\n   - failed: red border, red dot\n6. The currently running step should have a subtle pulse/glow animation\n7. Keep the header (title, badge, progress bar) above the flow\n8. Keep the log panel and buttons below the flow\n9. ReactFlow container height: 50vh or auto-fit based on step count\n10. Use fitView so the flow auto-centers\n\nNode layout calculation:\n- Start node at y=0\n- Each step node at y = (index + 1) * 140\n- End node at y = (steps.length + 1) * 140\n- All nodes at x=0, centered\n\nEdge styles:\n- completed→completed: solid green line\n- completed→running: animated dashed teal line\n- running→pending: dashed gray line\n- Use animated=true for the edge going INTO the running step\n\nIMPORTANT:\n- Import ReactFlow, Controls from '@xyflow/react'\n- Import '@xyflow/react/dist/style.css' at the top\n- Reuse PipelineNode from '../pipeline-builder/pipeline-node' but extend data to include status color\n- Wrap ReactFlow in a div with fixed height\n- Keep ALL existing functionality (logs, buttons, progress bar)\n- The empty state (no active execution) stays the same\n\nOutput the complete current-execution-card.tsx. Code only.",
+      "files": ["dashboard/components/dashboard/current-execution-card.tsx"],
+      "output": "code"
+    },
+    {
+      "step": "review",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "Review dashboard/components/dashboard/current-execution-card.tsx. Check: 1) ReactFlow imported and used 2) Nodes created from execution steps with status colors 3) Running step has animation/glow 4) Edges connect nodes vertically 5) Start/end nodes present 6) fitView enabled 7) Existing logs and buttons preserved 8) Empty state unchanged. Score 1-10.",
+      "input": ["implement"],
+      "output": "docs/execution-flow-review.md",
+      "pass": 7
+    }
+  ]
+}
