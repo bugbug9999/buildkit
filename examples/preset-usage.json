@@ -1,0 +1,26 @@
+{
+  "project": "preset-usage-example",
+  "description": "프리셋 시스템 사용 예시 — frontend-rn + reviewer 조합",
+  "codebase": "/path/to/your/project",
+  "steps": [
+    {
+      "step": "code-gen",
+      "role": "Developer",
+      "model": "codex",
+      "preset": "frontend-rn",
+      "prompt": "투약 페이지 UX 이슈를 수정하라. 아래 변경사항을 적용한다.\n\n1. CheckCard 전체를 TouchableOpacity로 감싸기\n2. 체크 버튼 44×44pt로 확대\n3. 메타 텍스트 fontSize 14px\n\n## 수정 파일\n/path/to/app/(tabs)/injection.tsx\n\n## 출력 형식\n// === /path/to/app/(tabs)/injection.tsx\n[전체 코드]",
+      "files": ["/path/to/app/(tabs)/injection.tsx"],
+      "output": "code"
+    },
+    {
+      "step": "review",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "preset": ["frontend-rn", "reviewer"],
+      "prompt": "위 코드 변경사항을 리뷰하라.",
+      "input": ["code-gen"],
+      "output": "output/review.md",
+      "pass": 8
+    }
+  ]
+}

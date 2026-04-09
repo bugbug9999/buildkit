@@ -1,0 +1,28 @@
+name: backend-fastify
+description: GLP-Care backend (Fastify + Prisma + PostgreSQL)
+scope:
+  files:
+    - ~/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/server/src/**/*.ts
+    - ~/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/server/prisma/schema.prisma
+stack:
+  - Fastify 5
+  - Prisma ORM
+  - PostgreSQL 15+
+  - TypeScript strict
+  - JWT 인증
+rules:
+  must:
+    - 모든 엔드포인트에 인증 미들웨어
+    - Prisma transaction 사용 (다중 테이블 수정 시)
+    - zod 스키마로 입력 검증
+    - 에러 응답 표준화 ({ error, code, message })
+    - 모든 쿼리에 userId 필터
+  forbidden:
+    - raw SQL 금지 (Prisma만)
+    - 마이그레이션 자동 실행 금지 (명령어 제안만)
+    - 민감 정보 로깅 금지
+context: |
+  사용자별 데이터 분리 필수. 모든 쿼리에 userId 필터.
+  의료 정보 취급하므로 민감 정보 (medication, medication_log)는 별도 취급.
+  Fastify 5 + Prisma + PostgreSQL 스택.
+  zod로 모든 입력 검증, JWT 인증 필수.

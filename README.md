@@ -119,11 +119,59 @@ CLI로 실행한 파이프라인도 대시보드에 실시간 반영됨.
 | 필드 | 설명 |
 |------|------|
 | `model` | `opus` (설계/기획), `codex` (코드 생성), `sonnet` (리뷰/테스트) |
+| `preset` | 프리셋 이름 또는 배열. 스택/규칙/컨텍스트를 프롬프트 앞에 자동 주입 |
 | `input` | 이전 스텝 이름 배열. 해당 스텝의 출력을 컨텍스트로 받음 |
 | `files` | 수정할 파일 경로. `output: "code"` 일 때 자동 적용 |
 | `output` | `"code"` = files에 적용, `"파일경로"` = 텍스트 저장 |
 | `verify` | 코드 적용 후 검증 명령. 실패 시 1회 재시도 |
 | `pass` | 리뷰 점수 기준 (N/10). 미달 시 code 스텝 재실행 |
+
+## 프리셋 시스템
+
+`presets/` 디렉토리의 YAML 파일로 역할별 규칙/컨텍스트를 재사용.
+
+### 사용법
+
+```json
+{
+  "step": "code-gen",
+  "model": "codex",
+  "preset": "frontend-rn",
+  "prompt": "실제 작업 지시..."
+}
+```
+
+복수 프리셋 합성:
+```json
+"preset": ["frontend-rn", "reviewer"]
+```
+
+### 기본 제공 프리셋
+
+| 파일 | 설명 |
+|------|------|
+| `frontend-rn.yaml` | React Native + Expo Router (GLP-Care mobile) |
+| `backend-fastify.yaml` | Fastify 5 + Prisma + PostgreSQL (GLP-Care server) |
+| `reviewer.yaml` | 코드 리뷰어 — 버그/보안/성능 체크 |
+| `ux-designer.yaml` | UX 설계자 — 사용자 여정 + 접근성 |
+
+### 커스텀 프리셋 만들기
+
+`presets/my-preset.yaml` 파일 생성:
+
+```yaml
+name: my-preset
+description: 설명
+stack:
+  - Node.js 22
+rules:
+  must:
+    - TypeScript strict
+  forbidden:
+    - any 타입 금지
+context: |
+  추가 컨텍스트 (자유 형식)
+```
 
 ## 모델 배치
 

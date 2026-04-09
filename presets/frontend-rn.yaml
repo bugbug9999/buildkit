@@ -1,0 +1,27 @@
+name: frontend-rn
+description: GLP-Care mobile (React Native + Expo Router)
+scope:
+  files:
+    - ~/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/**/*.tsx
+    - ~/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/components/**/*.tsx
+stack:
+  - React Native 0.7x
+  - Expo Router
+  - TypeScript strict
+rules:
+  must:
+    - StyleSheet.create 사용
+    - 한국어 UI
+    - 그린 테마 #10B981
+    - useCallback/useMemo로 성능 최적화
+    - 글씨 크기 14px 이상
+    - 터치 영역 44pt 이상
+  forbidden:
+    - NativeWind className 절대 금지
+    - DateTimePicker 금지 (커스텀 시간 선택 구현)
+    - any 타입 금지
+context: |
+  GLP-Care는 칼로리 + 투약 관리 앱. 사용자는 GLP-1 약물 복용자 (위고비/오젬픽/리벨서스 등).
+  글씨 크기 14px 이상, 터치 영역 44pt 이상 유지.
+  PRIMARY = '#10B981' 그린 테마 유지.
+  StyleSheet.create 사용, NativeWind className 절대 금지.

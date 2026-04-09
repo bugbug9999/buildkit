@@ -2,9 +2,55 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 import { EventEmitter } from 'events';
+import { load as loadYaml } from 'js-yaml';
 import { callAI } from './providers.js';
 import { extractContext, getGitDiff } from './context.js';
 import { applyCode, verify } from './verify.js';
+
+const PRESETS_DIR = path.resolve(import.meta.dirname, '..', 'presets');
+
+function loadPreset(name) {
+  const filePath = path.join(PRESETS_DIR, `${name}.yaml`);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Preset not found: ${name} (${filePath})`);
+  }
+  return loadYaml(fs.readFileSync(filePath, 'utf-8'));
+}
+
+function buildPresetPrefix(presetNames) {
+  const names = Array.isArray(presetNames) ? presetNames : [presetNames];
+  const sections = [];
+
+  for (const name of names) {
+    const preset = loadPreset(name);
+    const lines = [`## [Preset: ${preset.name}] ${preset.description}`];
+
+    if (preset.stack) {
+      lines.push(`\n### 기술 스택\n${preset.stack.map((s) => `- ${s}`).join('\n')}`);
+    }
+
+    if (preset.rules) {
+      if (preset.rules.must?.length) {
+        lines.push(`\n### 반드시 지켜야 할 규칙\n${preset.rules.must.map((r) => `- ${r}`).join('\n')}`);
+      }
+      if (preset.rules.forbidden?.length) {
+        lines.push(`\n### 절대 금지\n${preset.rules.forbidden.map((r) => `- ❌ ${r}`).join('\n')}`);
+      }
+    }
+
+    if (preset.context) {
+      lines.push(`\n### 컨텍스트\n${preset.context.trim()}`);
+    }
+
+    if (preset.output_format) {
+      lines.push(`\n### 출력 형식\n${preset.output_format.trim()}`);
+    }
+
+    sections.push(lines.join('\n'));
+  }
+
+  return sections.join('\n\n---\n\n') + '\n\n---\n\n';
+}
 
 function normalizePipelineInput(pipelineInput) {
   if (typeof pipelineInput === 'string') {
@@ -87,7 +133,8 @@ export class PipelineEngine extends EventEmitter {
         inputContent = getGitDiff(codebase);
       }
 
-      const fullPrompt = `${step.prompt}\n\n${inputContent}`.trim();
+      const presetPrefix = step.preset ? buildPresetPrefix(step.preset) : '';
+      const fullPrompt = `${presetPrefix}${step.prompt}\n\n${inputContent}`.trim();
 
       try {
         const response = await callAI(step.model, fullPrompt, {
@@ -115,8 +162,10 @@ export class PipelineEngine extends EventEmitter {
 
         if (step.output === 'code' && step.files) {
           for (const filePath of step.files) {
-            const filePattern = new RegExp(`// === ${filePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?(?=// ===|$)`);
-            const fileMatch = response.result.match(filePattern);
+            const escapedPath = filePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const filePattern = new RegExp(`// === ${escapedPath}[\\s\\S]*?(?=// ===|$)`);
+            const filePatternAlt = new RegExp(`// ${escapedPath}[\\s\\S]*?(?=// /|$)`);
+            const fileMatch = response.result.match(filePattern) || response.result.match(filePatternAlt);
             if (fileMatch) {
               applyCode(codebase, filePath, fileMatch[0]);
               this.emit('step:progress', {
@@ -313,11 +362,14 @@ export class TaskEngine extends EventEmitter {
         }
 
         let prompt;
-        if (task.instruction) {
-          // New format: instruction-based task
+        if (task.prompt) {
+          // Priority 1: Full prompt provided
+          prompt = task.prompt;
+        } else if (task.instruction) {
+          // Priority 2: New instruction-based task
           prompt = `${task.instruction}\n\n${context ? `현재 코드 (${task.file}):\n${context}\n\n` : ''}${contextFiles ? `참고 파일:\n${contextFiles}\n\n` : ''}수정된 전체 파일 코드만 출력. 설명 불필요.`;
         } else {
-          // Legacy format: do-based task
+          // Priority 3: Legacy do-based task
           prompt = `파일: ${task.file}\n수정할 곳: ${task.line ? `${task.line}번 줄 근처` : '전체'}\n할 일: ${task.do}\n\n현재 코드:\n${context}\n\n수정된 전체 파일 코드만 출력. 설명 불필요.`;
         }
 
@@ -325,8 +377,19 @@ export class TaskEngine extends EventEmitter {
         totalTokens += response.tokensUsed;
         totalCost += response.cost || 0;
 
+        // Apply to file if file path provided
         if (task.file) {
           applyCode(task.codebase || '.', task.file, response.result);
+        }
+
+        // Save to output path if provided
+        if (task.output) {
+          const outPath = path.isAbsolute(task.output) ? task.output : path.resolve(basePath, task.output);
+          const outDir = path.dirname(outPath);
+          if (!fs.existsSync(outDir)) {
+            fs.mkdirSync(outDir, { recursive: true });
+          }
+          fs.writeFileSync(outPath, response.result);
         }
 
         this.emit('step:completed', {
