@@ -1,16 +1,22 @@
 import fs from 'fs';
-import { execSync } from 'child_process';
+import { execSync, exec, spawn } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 let anthropic;
 let gemini;
 let openai;
 
 const DEFAULT_CLAUDE_CLI = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin/claude';
-const DEFAULT_GEMINI_CLI = '/tmp/node-v22.14.0-darwin-arm64/bin/gemini';
+const DEFAULT_GEMINI_CLI = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin/gemini';
 const DEFAULT_CODEX_CLI = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin/codex';
 
 const NODE_BIN = '/Users/bugbookee/.nvm/versions/node/v22.22.1/bin';
 const CLI_ENV = { ...process.env, PATH: `${NODE_BIN}:${process.env.PATH || ''}` };
+
+// 50MB: 대형 코드파일 응답도 수용
+const MAX_BUFFER = 50 * 1024 * 1024;
 
 export const COST_PER_TOKEN = {
   'claude-sonnet-4-6': { input: 0.003 / 1000, output: 0.015 / 1000 },
@@ -53,6 +59,62 @@ function commandExists(command) {
   } catch {
     return false;
   }
+}
+
+// Gemini CLI stdout에 섞이는 경고/메타 라인 제거
+// "YOLO mode is enabled..." 등 --approval-mode yolo 사용 후에도
+// 혹시 남을 수 있는 접두 라인 strip
+function stripGeminiNoise(output) {
+  return output
+    .split('\n')
+    .filter((line) => {
+      const l = line.trim();
+      if (l.startsWith('YOLO mode is enabled')) return false;
+      if (l.startsWith('All tool calls will be automatically approved')) return false;
+      return true;
+    })
+    .join('\n')
+    .trim();
+}
+
+// 비동기 CLI 실행 래퍼 (진짜 async - 이벤트 루프 블로킹 없음)
+async function execCli(command, timeoutMs) {
+  const { stdout } = await execAsync(command, {
+    encoding: 'utf-8',
+    timeout: timeoutMs,
+    maxBuffer: MAX_BUFFER,
+    env: CLI_ENV,
+  });
+  return stdout;
+}
+
+// Codex: stdin 파이프 방식 (spawn) — $(cat file) shell expansion ARG_MAX 회피
+function spawnCodex(promptFile, outFile, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      child.kill('SIGTERM');
+      reject(new Error(`Codex timeout after ${timeoutMs / 1000}s`));
+    }, timeoutMs);
+
+    const child = spawn(
+      getCodexCliPath(),
+      ['exec', '--dangerously-bypass-approvals-and-sandbox', '--skip-git-repo-check', '-o', outFile, '-'],
+      { env: CLI_ENV, stdio: ['pipe', 'pipe', 'pipe'] }
+    );
+
+    const promptStream = fs.createReadStream(promptFile);
+    promptStream.pipe(child.stdin);
+
+    child.on('error', (err) => { clearTimeout(timer); reject(err); });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      if (code !== 0 && code !== null) {
+        reject(new Error(`Codex exited with code ${code}`));
+      } else {
+        resolve();
+      }
+    });
+  });
 }
 
 export async function initProviders(options = {}) {
@@ -147,18 +209,22 @@ export async function callAI(model, prompt, options = {}) {
       outputTokens = resp.usage?.output_tokens || 0;
     } else {
       onProgress('📡 Claude CLI fallback (구독)');
-      const tmpFile = '/tmp/buildkit-claude-prompt.txt';
+      const tmpFile = `/tmp/buildkit-claude-${Date.now()}.txt`;
       fs.writeFileSync(tmpFile, prompt);
-      result = execSync(
+      // execAsync: 이벤트 루프 블로킹 없음 → 병렬 태스크 진짜 동시 실행
+      result = await execCli(
         `cat "${tmpFile}" | ${getClaudeCliPath()} -p --output-format text`,
-        { encoding: 'utf-8', timeout: 300000, env: CLI_ENV }
+        300000
       );
+      fs.unlink(tmpFile, () => {});
       inputTokens = Math.ceil(prompt.length / 4);
       billingModel = 'claude-cli';
     }
   } else if (resolvedModel.startsWith('gemini') || model === 'gemini') {
     if (gemini) {
-      const m = gemini.getGenerativeModel({ model: resolvedModel === 'gemini-cli' ? 'gemini-2.5-pro' : resolvedModel });
+      const m = gemini.getGenerativeModel({
+        model: resolvedModel === 'gemini-cli' ? 'gemini-2.5-pro' : resolvedModel,
+      });
       const resp = await m.generateContent(prompt);
       result = resp.response.text();
       inputTokens = resp.response.usageMetadata?.promptTokenCount || 0;
@@ -168,12 +234,16 @@ export async function callAI(model, prompt, options = {}) {
       }
     } else {
       onProgress('📡 Gemini CLI fallback (Ultra 구독)');
-      const tmpFile = '/tmp/buildkit-gemini-prompt.txt';
+      const tmpFile = `/tmp/buildkit-gemini-${Date.now()}.txt`;
       fs.writeFileSync(tmpFile, prompt);
-      result = execSync(
-        `cat "${tmpFile}" | ${getGeminiCliPath()} -p "코드만 출력. 설명 불필요." -y --sandbox false -o text`,
-        { encoding: 'utf-8', timeout: 180000, env: CLI_ENV }
+      // 수정: -y → --approval-mode yolo (YOLO 경고 stdout 오염 제거)
+      // 수정: -s false → --no-sandbox (-s false는 sandbox ON + "false" 쿼리 추가 버그)
+      const raw = await execCli(
+        `cat "${tmpFile}" | ${getGeminiCliPath()} -p "주어진 내용을 분석하고 한국어로 상세히 답해라." --approval-mode yolo --no-sandbox -o text 2>/dev/null`,
+        300000  // 기존 180s → 300s (대형 프롬프트 여유)
       );
+      fs.unlink(tmpFile, () => {});
+      result = stripGeminiNoise(raw);
       inputTokens = Math.ceil(prompt.length / 4);
     }
   } else if (resolvedModel.startsWith('gpt')) {
@@ -188,14 +258,15 @@ export async function callAI(model, prompt, options = {}) {
     outputTokens = resp.usage?.completion_tokens || 0;
   } else if (resolvedModel === 'codex') {
     onProgress('📡 Codex CLI fallback (OpenAI 구독)');
-    const tmpFile = '/tmp/buildkit-codex-prompt.txt';
+    const tmpFile = `/tmp/buildkit-codex-${Date.now()}.txt`;
+    const outFile = `/tmp/buildkit-codex-out-${Date.now()}.txt`;
     fs.writeFileSync(tmpFile, prompt);
-    const outFile = '/tmp/buildkit-codex-output.txt';
-    execSync(
-      `${getCodexCliPath()} exec --ephemeral --skip-git-repo-check -o "${outFile}" "$(cat "${tmpFile}")"`,
-      { encoding: 'utf-8', timeout: 600000, env: CLI_ENV }
-    );
+    // 수정: $(cat file) shell expansion → stdin 파이프 (ARG_MAX 1MB 한계 회피)
+    // spawnCodex는 Promise 기반 → 이벤트 루프 블로킹 없음
+    await spawnCodex(tmpFile, outFile, 600000);
     result = fs.existsSync(outFile) ? fs.readFileSync(outFile, 'utf-8') : '';
+    fs.unlink(tmpFile, () => {});
+    fs.unlink(outFile, () => {});
     inputTokens = Math.ceil(prompt.length / 4);
   } else {
     throw new Error(`Unknown model: ${model}`);
