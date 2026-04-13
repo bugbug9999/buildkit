@@ -1,0 +1,42 @@
+[
+  {
+    "name": "fix-LogPage-all",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/LogPage.tsx",
+    "output": "code",
+    "prompt": "src/pages/LogPage.tsx 전체를 수정해서 출력해라. ```tsx 블록으로.\n\n## 수정사항 (전부 적용)\n\n1. **에러 메시지 버그 수정** (🐛4)\n   - BEFORE: `setActionError(t('meal.foodName'))` (필드명이 에러로 표시)\n   - AFTER:  `setActionError(t('log.error.emptyFoodName'))`\n\n2. **저장 성공 피드백 추가** (🐛5)\n   - `handleSave` 성공 후 `setSaveMessage(t('log.saved'))` 설정\n   - `setTimeout(() => setSaveMessage(null), 2000)` 으로 2초 후 자동 제거\n   - state: `const [saveMessage, setSaveMessage] = useState<string | null>(null)`\n   - 에러/저장 카드 아래에 `{saveMessage ? <p style={{ color: '#047857', fontSize: 14 }}>{saveMessage}</p> : null}` 표시\n\n3. **window.confirm → ConfirmModal** (🐛7)\n   - `import { ConfirmModal } from '../components/ConfirmModal'` 추가\n   - state: `const [deleteTarget, setDeleteTarget] = useState<string | null>(null)`\n   - 삭제 버튼 클릭 → `setDeleteTarget(log.id)` (confirm 없이)\n   - `{deleteTarget ? <ConfirmModal title={t('meal.deleteConfirm')} confirmText={t('common.delete')} cancelText={t('common.cancel')} onConfirm={() => { void handleDelete(deleteTarget); setDeleteTarget(null); }} onCancel={() => setDeleteTarget(null)} /> : null}`\n   - `handleDelete` 함수에서 `window.confirm` 제거, id 받아서 바로 실행\n\n4. **날짜 중복 표시 제거** (🐛6)\n   - `<p style={{ margin: 0, color: '#475569', fontSize: 14, marginBottom: 20 }}>{selectedDate}</p>` 라인 삭제\n\n5. **빈 상태 CTA 추가** (🐛8)\n   - 빈 상태 카드에 버튼 추가:\n   ```tsx\n   <a href=\"/meal/add\" style={{ display: 'block', marginTop: 12, minHeight: 44, lineHeight: '44px', textAlign: 'center', background: '#10B981', color: '#fff', borderRadius: 12, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>\n     + 식사 기록하기\n   </a>\n   ```\n\n6. **버튼 cursor: pointer 추가** (🐛9)\n   - 저장 버튼 style에 `cursor: 'pointer'` 추가\n   - 삭제 버튼 style에 `cursor: 'pointer'` 추가\n\n기존 코드의 나머지 모든 로직, import, 스타일은 그대로 유지."
+  },
+  {
+    "name": "fix-ReportPage-all",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/ReportPage.tsx",
+    "output": "code",
+    "prompt": "src/pages/ReportPage.tsx 전체를 수정해서 출력해라. ```tsx 블록으로.\n\n## 수정사항 (전부 적용)\n\n1. **결제 확인 ConfirmModal 추가** (🐛11, 🐛12)\n   - `import { ConfirmModal } from '../components/ConfirmModal'` 추가\n   - state: `const [pendingCheckout, setPendingCheckout] = useState<{ planId: string; label: string; price: number; days: number } | null>(null)`\n   - 결제 버튼 클릭 → `setPendingCheckout({ planId: plan.id, label: plan.label, price: plan.price, days: plan.days })` (즉시 결제 실행 금지)\n   - ConfirmModal 표시:\n   ```tsx\n   {pendingCheckout ? (\n     <ConfirmModal\n       title={`${pendingCheckout.label} 결제`}\n       message={`${pendingCheckout.price.toLocaleString()}원이 결제됩니다. 계속하시겠어요?`}\n       confirmText=\"결제하기\"\n       cancelText=\"취소\"\n       onConfirm={() => {\n         const params = { impUid: `imp-${Date.now()}`, amount: pendingCheckout.price, merchantUid: `merchant-${Date.now()}`, planDays: pendingCheckout.days };\n         void checkoutPremium(params).then(() => loadProfile());\n         setPendingCheckout(null);\n       }}\n       onCancel={() => setPendingCheckout(null)}\n     />\n   ) : null}\n   ```\n\n2. **히트맵 aria-label 추가** (🐛10)\n   - 히트맵 각 셀에 `aria-label={`${day.date} 기록 ${day.count}개`}` 추가\n   - 기존 `title` 속성은 유지\n\n3. **히트맵 모바일 터치 지원**\n   - 셀 클릭 시 `setSelectedHeatmapDay(day)` state로 날짜+기록수 표시\n   - state: `const [selectedHeatmapDay, setSelectedHeatmapDay] = useState<{ date: string; count: number } | null>(null)`\n   - 히트맵 아래에: `{selectedHeatmapDay ? <p style={{ fontSize: 13, color: '#64748B', textAlign: 'center', margin: '4px 0 0' }}>{selectedHeatmapDay.date}: {selectedHeatmapDay.count}개 기록</p> : null}`\n\n기존 코드의 나머지 모든 로직, import, 스타일은 그대로 유지."
+  },
+  {
+    "name": "fix-ProfilePage-all",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/ProfilePage.tsx",
+    "output": "code",
+    "prompt": "src/pages/ProfilePage.tsx 전체를 수정해서 출력해라. ```tsx 블록으로.\n\n## 수정사항 (전부 적용)\n\n1. **saveMessage 타이머 추가** (🐛14)\n   - `setSaveMessage(...)` 호출 직후 `setTimeout(() => setSaveMessage(null), 2000)` 추가\n   - 기존 코드에서 `setSaveMessage` 사용하는 모든 곳에 적용\n\n2. **약물 레이블 한국어 추가** (🐛15)\n   - DRUG_OPTIONS에 한국어 설명 추가:\n   ```ts\n   const DRUG_OPTIONS = [\n     { value: 'wegovy', label: '위고비 (Wegovy)' },\n     { value: 'mounjaro', label: '마운자로 (Mounjaro)' },\n     { value: 'saxenda', label: '삭센다 (Saxenda)' },\n     { value: 'other', label: '기타' },\n   ];\n   ```\n\n3. **CSV 전체 기간 내보내기** (🐛13)\n   - 오늘 1일치 → 최근 90일 전체로 변경\n   - `const today = new Date().toISOString().slice(0, 10)` 대신:\n   ```ts\n   // 90일치 날짜 배열 생성 → Promise.all로 병렬 fetchMealLogs\n   // 단, API가 단일 날짜만 지원하면 → startDate/endDate 쿼리 파라미터로 시도:\n   // fetchMealLogs에 날짜 범위가 없으면 오늘 기준 최근 30일 루프\n   // 너무 복잡하면 오늘 + 어제 + 그저께(3일) 정도로만 해도 됨\n   // 실용적으로: fetchMealLogs를 오늘 날짜로 호출하되 파일명에 날짜 포함\n   // CSV 파일명: `레어헬스_식단_${today}.csv`\n   ```\n   - 실제로는 단일 날짜 API이므로: 오늘 데이터만 내보내되 파일명을 `레어헬스_식단_${today}.csv`로 명확히 하고,\n     버튼 텍스트를 `오늘 식단 CSV 내보내기`로 변경 (범위 명시)\n\n4. **GLP-1 시작일 미래 날짜 방지** (LOW)\n   - `<input type=\"date\"` 에 `max={new Date().toISOString().slice(0, 10)}` 추가\n\n5. **체중 입력 단위 표시** (MED)\n   - 체중 input 옆에 `kg` suffix 표시:\n   ```tsx\n   <div style={{ position: 'relative' }}>\n     <input type=\"number\" ... />\n     <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', fontSize: 14 }}>kg</span>\n   </div>\n   ```\n\n6. **알림 설정 Push 안내 추가** (🐛16)\n   - 알림 설정 섹션 상단에 안내 문구 추가:\n   ```tsx\n   <p style={{ fontSize: 12, color: '#94A3B8', margin: '0 0 12px' }}>\n     알림을 받으려면 기기의 브라우저 알림 권한을 허용해 주세요.\n   </p>\n   ```\n\n기존 코드의 나머지 모든 로직, import, 스타일은 그대로 유지."
+  },
+  {
+    "name": "fix-i18n",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/i18n/ko.json",
+    "output": "code",
+    "prompt": "src/i18n/ko.json에 아래 키들을 추가해라. 기존 키는 유지하고 끝부분에 추가. 완성된 JSON 전체를 출력.\n\n추가할 키:\n```json\n\"nav.log\": \"기록\",\n\"nav.report\": \"리포트\",\n\"nav.profile\": \"프로필\",\n\"nav.ariaLabel\": \"하단 탭 네비게이션\",\n\"log.title\": \"기록\",\n\"log.empty\": \"이 날 식사 기록이 없습니다.\",\n\"log.saved\": \"저장되었습니다.\",\n\"log.error.emptyFoodName\": \"음식명을 입력해 주세요.\",\n\"log.deleteConfirm\": \"이 기록을 삭제할까요?\",\n\"report.title\": \"리포트\",\n\"report.weekly.streak\": \"{{count}}일 연속\",\n\"report.shareCard.premiumOnly\": \"프리미엄 사용자만 공유 카드를 생성할 수 있습니다.\",\n\"report.shareCard.generate\": \"공유카드 생성\",\n\"report.plan.30days\": \"30일 프리미엄\",\n\"report.plan.90days\": \"90일 프리미엄\",\n\"report.heatmap.weeks\": \"{{count}}주\",\n\"profile.title\": \"프로필\",\n\"profile.body.proteinGoalHint\": \"권장 단백질 목표 {{g}}g\",\n\"profile.saved\": \"저장되었습니다.\",\n\"profile.drug.wegovy\": \"위고비 (Wegovy)\",\n\"profile.drug.mounjaro\": \"마운자로 (Mounjaro)\",\n\"profile.drug.saxenda\": \"삭센다 (Saxenda)\",\n\"profile.drug.other\": \"기타\",\n\"profile.csv.today\": \"오늘 식단 CSV 내보내기\",\n\"profile.notification.hint\": \"알림을 받으려면 기기의 브라우저 알림 권한을 허용해 주세요.\"\n```"
+  },
+  {
+    "name": "fix-BottomNav-aria",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/components/BottomNav.tsx",
+    "output": "code",
+    "prompt": "src/components/BottomNav.tsx를 수정해서 전체 출력해라. ```tsx 블록으로.\n\n## 수정사항\n\n1. **emoji span에 aria-hidden 추가**\n   - 모든 `<span style={iconStyle}>🏠</span>` → `<span style={iconStyle} aria-hidden=\"true\">🏠</span>`\n   - 5개 탭 전부 동일하게 적용\n\n2. **NavLink의 중복 aria-label 제거**\n   - 각 NavLink에서 `aria-label={t('nav.xxx')}` 제거 (내부 텍스트 레이블 있으므로 중복)\n\n3. **label fontSize 11px로 상향**\n   - `labelStyle: { fontSize: 10, fontWeight: 600 }` → `{ fontSize: 11, fontWeight: 600 }`\n\n기존 navLinkStyle, iconStyle, 스타일 나머지는 그대로 유지."
+  }
+]

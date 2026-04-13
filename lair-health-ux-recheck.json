@@ -1,0 +1,20 @@
+{
+  "project": "lair-health-ux-recheck",
+  "codebase": "/Users/bugbookee/Desktop/lair-health",
+  "steps": [
+    {
+      "step": "ux-recheck",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "레어헬스 웹앱 UX/버그 재검토다. 이전 리뷰에서 6.5점이었고 아래 수정이 완료됐다. 수정된 파일을 읽고 점수를 다시 매겨라.\n\n## 이전 대비 수정 완료 항목\n- LogPage: 저장 성공 토스트 2초, ConfirmModal 삭제, 에러메시지 전용 키, CTA 버튼, cursor:pointer\n- ReportPage: 결제 ConfirmModal (금액 확인), 히트맵 aria-label, 터치 피드백\n- ProfilePage: saveMessage 2초 타이머, 약물 한/영 병기, kg 단위, 시작일 max=오늘, 알림 안내 문구\n- BottomNav: emoji aria-hidden, 중복 aria-label 제거, fontSize 11\n- ko.json: nav/log/report/profile 키 24개 추가\n\n## 검토 파일\n- src/pages/LogPage.tsx\n- src/pages/ReportPage.tsx\n- src/pages/ProfilePage.tsx\n- src/components/BottomNav.tsx\n- src/i18n/ko.json\n\n## 평가 기준 (이전과 동일)\n1. 네비게이션 & 구조\n2. 정보 계층 & 레이아웃\n3. 인터랙션 & 피드백\n4. 접근성 (aria, 터치 타겟)\n5. GLP-1 특화 UX\n6. i18n 완성도\n7. 버그 잔존 여부\n\n## 출력 형식\n- 각 파일별: ✅ 수정 확인된 것, ⚠️ 아직 남은 이슈\n- **전체 UX 점수: N/10**\n- 이전(6.5) 대비 점수 변화 이유 설명\n- 아직 남은 TOP 3 이슈 (있으면)",
+      "files": [
+        "src/pages/LogPage.tsx",
+        "src/pages/ReportPage.tsx",
+        "src/pages/ProfilePage.tsx",
+        "src/components/BottomNav.tsx",
+        "src/i18n/ko.json"
+      ],
+      "output": "/Users/bugbookee/Desktop/buildkit/output/lair-health-ux-recheck.md"
+    }
+  ]
+}

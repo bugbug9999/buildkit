@@ -1,0 +1,32 @@
+[
+  {
+    "name": "fix-unused-imports",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/ai/lair/lair-app-v2/apps/lair-health",
+    "files": [
+      "src/components/CalendarView.tsx",
+      "src/components/TimeSlotModal.tsx",
+      "src/pages/MedicationAddPage.tsx",
+      "src/pages/MedicationEditPage.tsx",
+      "src/pages/MedicationPage.tsx"
+    ],
+    "output": "code",
+    "prompt": "다음 TypeScript 에러들을 수정하라. 각 파일에서 사용하지 않는 import만 제거하거나 파라미터명을 변경한다. 다른 코드는 절대 변경하지 않는다.\n\n1. src/components/CalendarView.tsx: import에서 'getDateKey' 제거. { DAYS, pad, getDateKey, buildCalendarMatrix, ... } → { DAYS, pad, buildCalendarMatrix, ... }\n\n2. src/components/TimeSlotModal.tsx: import에서 'pad' 제거. { ..., pad, ... } → pad 삭제\n\n3. src/pages/MedicationAddPage.tsx: import에서 'MedSchedule' 제거\n\n4. src/pages/MedicationEditPage.tsx: import에서 'SLOT_MAP', 'FORM_MAP', 'COND_MAP' 세 개 제거. SLOT_MAP_INV, FORM_MAP_INV, COND_MAP_INV는 유지\n\n5. src/pages/MedicationPage.tsx: handleToggle 콜백의 첫번째 파라미터 'medicationId: string'를 '_medicationId: string'으로 rename"
+  },
+  {
+    "name": "fix-api-erasable-syntax",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/ai/lair/lair-app-v2/apps/lair-health",
+    "files": ["src/services/api.ts"],
+    "output": "code",
+    "prompt": "src/services/api.ts의 ApiError 클래스에서 erasableSyntaxOnly 에러를 수정하라. constructor parameter property를 일반 class property로 변환:\n\nBEFORE:\n```ts\nexport class ApiError extends Error {\n  constructor(\n    public readonly status: number,\n    message: string,\n  ) {\n    super(message);\n    this.name = 'ApiError';\n  }\n}\n```\nAFTER:\n```ts\nexport class ApiError extends Error {\n  readonly status: number;\n  constructor(\n    status: number,\n    message: string,\n  ) {\n    super(message);\n    this.status = status;\n    this.name = 'ApiError';\n  }\n}\n```\n다른 코드 변경 없음."
+  },
+  {
+    "name": "fix-lair-client-type",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/ai/lair/lair-app-v2/apps/lair-health",
+    "files": ["src/lib/lair-client.ts"],
+    "output": "code",
+    "prompt": "src/lib/lair-client.ts의 getLairSession 함수 반환 타입에서 'nickname: string'을 'nickname: string | null'로 변경하라. lair.auth.getSession()이 실제로 nickname: string | null을 반환하기 때문. 다른 코드 변경 없음."
+  }
+]

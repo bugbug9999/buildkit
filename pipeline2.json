@@ -1,0 +1,27 @@
+{
+  "project": "glpcare-ux-redesign",
+  "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile",
+  "steps": [
+    {
+      "step": "code-gen",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "GLP-Care 칼로리 앱 UX 리디자인 코드를 작성하라.\n\n## 설계서 경로\n/Users/bugbookee/Desktop/buildkit/output/glpcare-ux-design.md\n\n## 수정 파일\n1. /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/(tabs)/index.tsx\n2. /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/meal/add.tsx\n\n## 절대 규칙 (위반 시 빌드 실패)\n- NativeWind className 속성 금지 → style={{ }} 또는 StyleSheet 사용\n- DateTimePicker import/사용 금지\n- 모든 UI 텍스트 한국어\n- 기존 import 경로 유지: useMealStore, searchFood, FoodItem, clearRecentFoods, getRecentFoods, saveRecentFood, expo-router\n- react-native-svg 사용 가능 (이미 설치됨)\n- TypeScript strict 모드: any 타입 사용 최소화\n- StyleSheet.create로 모든 스타일 정의\n\n## index.tsx 구현 요구사항\n1. 날짜 네비게이터: useState<Date>로 selectedDate 관리, 좌우 화살표 터치, 오늘이면 '오늘' 배지\n2. '자세히'/'한눈에' 탭 UI (activeTab state, 탭 전환만 구현, 한눈에 뷰는 placeholder)\n3. 원형 게이지: SVG_SIZE=240, RADIUS=100, 중앙에 칼로리 크게 (40px bold)\n4. 탄/단/지 퍼센트 배지: 게이지 아래 가로 배치 (탄수화물 #3B82F6, 단백질 #10B981, 지방 #F97316) — 퍼센트는 각 영양소의 목표 달성률(current/goal*100)\n5. 남은 칼로리 배너: remainingKcal = goalCaloriesKcal - totalCaloriesKcal\n6. 동기부여 메시지: progress 비율(0~1)에 따라 3단계 메시지\n7. 식사 카드 2x2 그리드: flexDirection row + flexWrap wrap, 각 카드 width '48%'\n\n## add.tsx 구현 요구사항\n1. 검색 헤더: X 버튼(router.back()) 왼쪽 + 식사명 중앙 + '직접입력' 오른쪽\n2. 검색 결과 카드 왼쪽에 칼로리 기준 컬러 도트 (width 8, height 8, borderRadius 4)\n   - caloriesKcal < 200: '#10B981' (그린)\n   - caloriesKcal < 500: '#F59E0B' (오렌지)\n   - 그 이상: '#EF4444' (레드)\n3. 기존 search/manual/detail 모드 로직 완전 유지\n4. 기존 debounce, logMeal, handleSelectFood 등 모든 핸들러 유지\n5. renderFoodItem은 useCallback으로 감싸기\n\n## 출력 형식 (필수)\n반드시 아래 형식으로 출력하라. // === 마커가 없으면 파일 적용이 불가능하다:\n\n// === /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/(tabs)/index.tsx\n[index.tsx 전체 코드]\n\n// === /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/meal/add.tsx\n[add.tsx 전체 코드]",
+      "files": [
+        "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/(tabs)/index.tsx",
+        "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/meal/add.tsx"
+      ],
+      "output": "code",
+      "verify": "tsc"
+    },
+    {
+      "step": "review",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "GLP-Care 앱 UX 리디자인 코드를 리뷰하라.\n\n## 검토 항목\n1. **GLP-Care 제약 준수**\n   - NativeWind className 사용 여부 (있으면 위반)\n   - DateTimePicker import 여부 (있으면 위반)\n   - 한국어 UI 텍스트 여부\n   - StyleSheet.create 사용 여부\n2. **기능 완전성**\n   - 날짜 네비게이터 동작 로직\n   - 탄/단/지 퍼센트 배지 렌더링\n   - 칼로리 도트 색상 분기 로직\n   - 기존 search/manual/detail 모드 보존 여부\n3. **React Native 렌더링 이슈**\n   - flex 레이아웃 문제 (2x2 그리드 width 설정)\n   - KeyboardAvoidingView + FlatList 충돌 가능성\n4. **TypeScript**\n   - any 타입 남용 여부\n5. **성능**\n   - useCallback/useMemo 적절한 사용\n   - FlatList keyExtractor 올바른 설정\n\n## 출력 형식\n점수: N/10\n\n심각한 버그 (있으면 목록):\n- ...\n\n수정 권고 (있으면 목록):\n- ...\n\n통과 여부: PASS / FAIL",
+      "input": ["code-gen"],
+      "output": "/Users/bugbookee/Desktop/buildkit/output/glpcare-ux-review2.md",
+      "pass": 7
+    }
+  ]
+}

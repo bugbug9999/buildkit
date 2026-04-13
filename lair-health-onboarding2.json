@@ -1,0 +1,16 @@
+[
+  {
+    "name": "onboarding-uistore",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/store/uiStore.ts",
+    "instruction": "uiStore에 온보딩 관련 state와 action을 추가하라.\n\n추가할 타입:\n```typescript\ninterface OnboardingData {\n  glp1Drug: string;\n  glp1StartDate: string;\n  weightKg: number;\n  heightCm: number;\n  age: number;\n  sex: 'male' | 'female';\n  goalCalories: number;\n  goalProtein: number;\n  goalCarbs: number;\n  goalFat: number;\n}\n```\n\n추가할 state:\n- onboardingDone: boolean — storageGet<boolean>('onboarding-done') ?? false\n- glp1Drug: string — storageGet<string>('glp1-drug') ?? 'other'\n- glp1StartDate: string — storageGet<string>('glp1-start-date') ?? ''\n- weightKg: number — storageGet<number>('weight-kg') ?? 0\n- heightCm: number — storageGet<number>('height-cm') ?? 0\n- age: number — storageGet<number>('age') ?? 0\n- sex: 'male' | 'female' — storageGet<string>('sex') as 'male'|'female' ?? 'female'\n\n추가할 action:\n```\ncompleteOnboarding: (data: OnboardingData) => void\n```\ncompleteOnboarding 구현: 모든 필드 storageSet + setGoals 호출 + set({ onboardingDone: true, ...모든필드 }).\n\n기존 UIState, 기존 fields, 기존 actions는 그대로 유지."
+  },
+  {
+    "name": "onboarding-approuting",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/App.tsx",
+    "instruction": "App.tsx에 온보딩 라우팅을 추가하라.\n\n변경사항:\n1. OnboardingPage lazy import 추가: `const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));`\n2. AppShell 컴포넌트 상단에 useUIStore에서 onboardingDone 가져오기\n3. onboardingDone이 false이고 현재 경로가 '/onboarding'이 아니면 <Navigate to='/onboarding' replace /> 반환\n4. Routes에 `<Route path='/onboarding' element={<OnboardingPage />} />` 추가\n5. BOTTOM_NAV_ROUTES에서 '/onboarding' 제외 (이미 없음)\n\n기존 코드 구조와 스타일 그대로 유지."
+  }
+]

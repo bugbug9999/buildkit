@@ -1,0 +1,26 @@
+{
+  "project": "glpcare-ux-bugfix",
+  "codebase": "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile",
+  "steps": [
+    {
+      "step": "bugfix",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "GLP-Care 앱 두 파일의 버그를 수정하라. 기존 코드를 최대한 유지하고 아래 명시된 수정사항만 반영한다.\n\n## 수정 파일\n1. /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/meal/add.tsx\n2. /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/(tabs)/index.tsx\n\n## mealStore API (참고)\n- import: `import { useMealStore } from '../../src/store/mealStore';`\n- logMeal 시그니처: `logMeal(input: CreateMealLogInput): Promise<MealLog>`\n- CreateMealLogInput 필드: foodName, caloriesKcal, proteinG, carbsG, fatG, mealType?, sourceType?, loggedAt?, imageKey?, aiAnalysisId?\n- fetchTodaySummary(): Promise<void> — 날짜 파라미터 없음 (항상 오늘)\n- import 경로: `import type { CreateMealLogInput } from '../../src/types/meal';`\n\n---\n\n## add.tsx 수정사항\n\n### 버그 1: logMeal stub 제거 → mealStore.logMeal 연결\n\n현재:\n```ts\nasync function logMeal(meal: MealLog) {\n  console.log('logMeal:', meal);\n}\n```\n\n수정:\n1. 파일 상단 `logMeal` stub 함수 완전히 삭제\n2. 로컬 `MealLog` interface 삭제 (stub과 함께 정의된 것)\n3. useMealStore에서 logMeal 추출: `const { logMeal, isSavingMeal } = useMealStore();`\n4. isSavingMeal로 버튼 로딩 상태 표시 (primaryButton disabled 조건에 추가)\n5. CreateMealLogInput 타입 import 추가\n6. handleManualSubmit, handleAddDetail에서 기존 `logMeal(...)` 호출은 그대로 유지 (이제 store의 logMeal을 호출)\n7. try-catch로 감싸기 (에러 시 Alert.alert('저장 실패', '다시 시도해주세요') 표시, Alert import 추가)\n\n### 버그 2: FlatList style={{ flex: 1 }} 추가\n검색 결과 FlatList에 `style={{ flex: 1 }}` 추가\n\n### 성능: useCallback 추가\n- handleManualSubmit → useCallback으로 감싸기 (deps: [manualName, manualCalories, manualProtein, manualCarbs, manualFat, mealType, logMeal])\n- handleAddDetail → useCallback으로 감싸기 (deps: [selectedFood, servingCount, mealType, logMeal])\n- renderFoodCard (FlatList renderItem 함수) → 이미 useCallback이면 유지, 없으면 추가\n\n---\n\n## index.tsx 수정사항\n\n### 버그 3: fetchTodaySummary useEffect 수정\n\n현재 (잘못된 코드):\n```ts\nuseEffect(() => {\n  void fetchTodaySummary();\n}, [selectedDate]);\n```\n\n수정:\n```ts\nuseEffect(() => {\n  // TODO: fetchTodaySummary는 날짜 파라미터 미지원 (항상 오늘 데이터)\n  // 날짜별 데이터 조회는 백엔드 API 확장 후 fetchTodayLogs(dateStr) 연결 예정\n  void fetchTodaySummary();\n}, [fetchTodaySummary, selectedDate]);\n```\n- `fetchTodaySummary`를 deps 배열에 추가 (ESLint exhaustive-deps 준수)\n- TODO 주석 추가\n\n### 성능: useCallback 추가\n- goToPreviousDate → useCallback으로 감싸기 (deps: [selectedDate])\n- goToNextDate (또는 goForward) → useCallback으로 감싸기 (deps: [selectedDate, isToday])\n\n---\n\n## 절대 규칙\n- NativeWind className 금지, DateTimePicker 금지, 한국어 UI 유지\n- StyleSheet.create 유지\n- 위에서 명시한 수정사항 외 다른 코드 변경 금지\n- 전체 파일 코드를 출력하라\n\n## 출력 형식 (필수 — 이 마커 없으면 파일 적용 불가)\n\n// === /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/meal/add.tsx\n[add.tsx 전체 코드]\n\n// === /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/(tabs)/index.tsx\n[index.tsx 전체 코드]",
+      "files": [
+        "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/meal/add.tsx",
+        "/Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/(tabs)/index.tsx"
+      ],
+      "output": "code"
+    },
+    {
+      "step": "review",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "GLP-Care 앱 버그 수정 코드를 리뷰하라. 목표 점수 8/10 이상.\n\n## 핵심 검토 항목\n1. **logMeal 연결** — stub 제거됐는가, mealStore.logMeal 호출하는가, try-catch 있는가\n2. **FlatList flex** — style={{ flex: 1 }} 추가됐는가\n3. **fetchTodaySummary deps** — fetchTodaySummary가 useEffect deps에 포함됐는가\n4. **useCallback** — handleManualSubmit, handleAddDetail, goToPreviousDate/goToNextDate에 적용됐는가\n5. **GLP-Care 제약** — NativeWind className 없음, DateTimePicker 없음, 한국어, StyleSheet.create\n6. **TypeScript** — any 남용, CreateMealLogInput 타입 정확히 사용했는가\n7. **Alert import** — RN에서 Alert import 추가됐는가\n\n## 출력 형식\n점수: N/10\n\n수정 확인 (각 항목 ✅/❌):\n- logMeal stub 제거: ?\n- mealStore.logMeal 연결: ?\n- try-catch 에러 처리: ?\n- FlatList flex: ?\n- fetchTodaySummary deps 수정: ?\n- useCallback 적용: ?\n- GLP-Care 제약: ?\n\n잔여 버그 (있으면):\n- ...\n\n통과 여부: PASS / FAIL",
+      "input": ["bugfix"],
+      "output": "/Users/bugbookee/Desktop/buildkit/output/glpcare-bugfix-review.md",
+      "pass": 8
+    }
+  ]
+}

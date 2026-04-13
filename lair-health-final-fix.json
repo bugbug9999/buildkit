@@ -1,0 +1,18 @@
+[
+  {
+    "name": "fix-ReportPage-payment-aria",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/ReportPage.tsx",
+    "output": "code",
+    "prompt": "src/pages/ReportPage.tsx 전체를 수정해서 출력해라. ```tsx 블록으로.\n\n## 수정사항 2가지만 적용\n\n1. **결제 확인 ConfirmModal 추가**\n   - 파일 상단에 이미 없으면: `import { ConfirmModal } from '../components/ConfirmModal';` 추가\n   - ReportPage 컴포넌트 안에 state 추가:\n     ```tsx\n     const [pendingCheckout, setPendingCheckout] = useState<{ planDays: number; amount: number } | null>(null);\n     ```\n   - `handleCheckout` 함수를 직접 결제하지 않고 pendingCheckout 설정만 하도록 변경:\n     ```tsx\n     function requestCheckout(planDays: number, amount: number): void {\n       setPendingCheckout({ planDays, amount });\n     }\n     ```\n   - `PlanSelectionCard onCheckout={handleCheckout}` → `onCheckout={requestCheckout}` 로 변경\n   - JSX 마지막에 ConfirmModal 추가 (BottomNav 위에):\n     ```tsx\n     {pendingCheckout ? (\n       <ConfirmModal\n         title=\"결제 확인\"\n         message={`${pendingCheckout.amount.toLocaleString()}원이 결제됩니다. 계속하시겠어요?`}\n         confirmText=\"결제하기\"\n         cancelText=\"취소\"\n         onConfirm={() => {\n           void handleCheckout(pendingCheckout.planDays, pendingCheckout.amount);\n           setPendingCheckout(null);\n         }}\n         onCancel={() => setPendingCheckout(null)}\n       />\n     ) : null}\n     ```\n\n2. **히트맵 aria-label 추가**\n   - HeatmapGrid 내 cells.map에서 각 div에 `aria-label={`${cell.date}: ${cell.count}개 기록`}` 추가\n   - 기존 `title` 속성은 유지\n\n기존 코드의 나머지 모든 로직, import, 스타일은 그대로 유지."
+  },
+  {
+    "name": "fix-ProfilePage-timeout",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/ProfilePage.tsx",
+    "output": "code",
+    "prompt": "src/pages/ProfilePage.tsx 전체를 수정해서 출력해라. ```tsx 블록으로.\n\n## 수정사항 1가지만 적용\n\n**handleSave 이중 setTimeout 버그 수정**\n\n현재 코드 (버그):\n```tsx\nasync function handleSave(): Promise<void> {\n  setSaveMessage(null);                        // ❌ 이 줄 삭제\n  setTimeout(() => setSaveMessage(null), 2000); // ❌ 이 줄 삭제\n  const weightKg = form.weightKg.trim() ? Number(form.weightKg) : null;\n\n  await patchProfile({ ... });\n\n  if (!useUserStore.getState().error) {\n    setSaveMessage(t('profile.saved'));          // ✅ 유지\n    setTimeout(() => setSaveMessage(null), 2000); // ✅ 유지\n  }\n}\n```\n\n수정 후 (정상):\n```tsx\nasync function handleSave(): Promise<void> {\n  const weightKg = form.weightKg.trim() ? Number(form.weightKg) : null;\n\n  await patchProfile({ ... });\n\n  if (!useUserStore.getState().error) {\n    setSaveMessage(t('profile.saved'));\n    setTimeout(() => setSaveMessage(null), 2000);\n  }\n}\n```\n\n즉, `handleSave` 함수 맨 위 두 줄 (`setSaveMessage(null)` + `setTimeout(() => setSaveMessage(null), 2000)`) 제거.\n\n기존 코드의 나머지 모든 로직, import, 스타일은 그대로 유지."
+  }
+]

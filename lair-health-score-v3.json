@@ -1,0 +1,20 @@
+{
+  "project": "lair-health-score-v3",
+  "codebase": "/Users/bugbookee/Desktop/lair-health",
+  "steps": [
+    {
+      "step": "score-v3",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "레어헬스 웹앱 UX 점수 v3 검토. 이전 8.8/10.\n\n## 이번 추가 수정\n- LogPage: `t('log.error.emptyFoodName')` 올바른 에러 키 적용\n- LogPage: `window.confirm` → ConfirmModal (deleteTarget state)\n- LogPage: saveMessage toast 2초 (setSaveMessage + setTimeout)\n- LogPage: `role=\"alert\"` on error paragraphs, `aria-live=\"polite\"` on saveMessage\n- BottomNav: `aria-label={t('nav.ariaLabel')}` i18n 적용\n\n## 검토 파일\n- src/pages/LogPage.tsx\n- src/pages/ReportPage.tsx  \n- src/pages/ProfilePage.tsx\n- src/components/BottomNav.tsx\n- src/i18n/ko.json\n\n## 평가 기준 (7가지)\n1. 네비게이션 & 구조\n2. 정보 계층 & 레이아웃\n3. 인터랙션 & 피드백 (토스트, 모달, 에러)\n4. 접근성 (aria, 터치 타겟 44px, role=alert, aria-live)\n5. GLP-1 특화 UX\n6. i18n 완성도\n7. 버그 잔존 여부\n\n## 출력 형식\n- 각 파일별: ✅ 확인된 것, ⚠️ 남은 이슈\n- 기준별 점수 테이블\n- **전체 UX 점수: N/10**\n- 이전(8.8) 대비 변화 이유\n- 목표 9.7 달성 여부",
+      "files": [
+        "src/pages/LogPage.tsx",
+        "src/pages/ReportPage.tsx",
+        "src/pages/ProfilePage.tsx",
+        "src/components/BottomNav.tsx",
+        "src/i18n/ko.json"
+      ],
+      "output": "/Users/bugbookee/Desktop/buildkit/output/lair-health-score-v3.md"
+    }
+  ]
+}

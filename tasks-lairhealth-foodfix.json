@@ -1,0 +1,18 @@
+[
+  {
+    "name": "fix-food-search-url-standalone",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "files": ["src/services/mealApi.ts"],
+    "output": "code",
+    "prompt": "src/services/mealApi.ts에서 음식 검색 URL을 수정하라. 현재 `/health-api/api/meal/foods` → `/health-api/api/food/search`로 변경. 백엔드에 해당 route가 없어서 404 발생 중. 정확히 이 한 줄만 변경하고 다른 코드는 건드리지 않는다."
+  },
+  {
+    "name": "fix-food-search-url-monorepo",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/ai/lair/lair-app-v2/apps/lair-health",
+    "files": ["src/services/mealApi.ts"],
+    "output": "code",
+    "prompt": "src/services/mealApi.ts에서 음식 검색 URL을 수정하라. 현재 `/health-api/api/meal/foods` → `/health-api/api/food/search`로 변경. 백엔드에 해당 route가 없어서 404 발생 중. 정확히 이 한 줄만 변경하고 다른 코드는 건드리지 않는다."
+  }
+]

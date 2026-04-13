@@ -1,0 +1,20 @@
+{
+  "project": "lair-health-score-v5",
+  "codebase": "/Users/bugbookee/Desktop/lair-health",
+  "steps": [
+    {
+      "step": "score-v5",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "레어헬스 웹앱 UX 점수 v5 최종 검토. 이전 9.3/10.\n\n## 이번 추가 수정\n- ReportPage: 히트맵 div에 `role=\"img\"` 추가\n- ReportPage: PLAN_OPTIONS label도 i18n 키 적용 (`t(option.label)`)\n- ReportPage: `t(option.description)` + `t(option.label)` — 완전 i18n\n- ProfilePage: saveMessage에 `aria-live=\"polite\"` 추가\n- LogPage: 삭제 버튼 → ConfirmModal (deleteTarget state), 저장 에러 `t('log.error.emptyFoodName')` 확인\n\n## 검토 파일\n- src/pages/LogPage.tsx\n- src/pages/ReportPage.tsx\n- src/pages/ProfilePage.tsx\n- src/components/BottomNav.tsx\n- src/i18n/ko.json\n\n## 평가 기준\n1. 네비게이션 & 구조\n2. 정보 계층 & 레이아웃  \n3. 인터랙션 & 피드백\n4. 접근성 (aria, role, 44px)\n5. GLP-1 특화 UX\n6. i18n 완성도\n7. 버그 잔존 여부\n\n## 출력 형식\n- 파일별 ✅/⚠️ (간략히)\n- 기준별 점수 테이블 (X.X/1.5 또는 X.X/1.0)\n- **전체 UX 점수: N/10**\n- 목표 9.7 달성 여부 및 gap",
+      "files": [
+        "src/pages/LogPage.tsx",
+        "src/pages/ReportPage.tsx",
+        "src/pages/ProfilePage.tsx",
+        "src/components/BottomNav.tsx",
+        "src/i18n/ko.json"
+      ],
+      "output": "/Users/bugbookee/Desktop/buildkit/output/lair-health-score-v5.md"
+    }
+  ]
+}

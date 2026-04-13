@@ -1,0 +1,28 @@
+{
+  "project": "lair-health-onboarding",
+  "codebase": "/Users/bugbookee/Desktop/lair-health",
+  "steps": [
+    {
+      "step": "dev",
+      "role": "developer",
+      "model": "codex",
+      "prompt": "React Native GLP-Care 앱의 온보딩을 lair-health 웹앱(React + TypeScript + Vite)으로 포팅하라.\n\n## 참고 소스 (RN 버전)\n원본 온보딩: `~/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/app/(auth)/onboarding/glp1-setup.tsx`\n\n## 기존 웹앱 구조\n- `src/store/uiStore.ts` — goalCalories, goalCarbs, goalProtein, goalFat, setGoals() 이미 존재\n- `src/lib/storage.ts` — get/set localStorage 래퍼\n- `src/App.tsx` — BrowserRouter, lazy 페이지, AppShell 컴포넌트\n- 스타일: inline style 또는 CSS-in-JS (styled-components 없음), 기존 테마 색상 PRIMARY #10B981 사용\n\n## 작업 1: src/store/uiStore.ts 수정\nuiStore에 다음 온보딩 관련 필드와 액션을 추가:\n```typescript\n// 추가할 state\nonboardingDone: boolean           // localStorage 'onboarding-done'\nglp1Drug: string                  // localStorage 'glp1-drug' (wegovy|mounjaro|saxenda|other)\nglp1StartDate: string             // localStorage 'glp1-start-date'\nweightKg: number                  // localStorage 'weight-kg'\nheightCm: number                  // localStorage 'height-cm'\nage: number                       // localStorage 'age'\nsex: 'male' | 'female'            // localStorage 'sex'\n\n// 추가할 action\ncompleteOnboarding: (data: OnboardingData) => void\n```\nOnboardingData 타입:\n```typescript\ninterface OnboardingData {\n  glp1Drug: string;\n  glp1StartDate: string;\n  weightKg: number;\n  heightCm: number;\n  age: number;\n  sex: 'male' | 'female';\n  goalCalories: number;\n  goalProtein: number;\n  goalCarbs: number;\n  goalFat: number;\n}\n```\ncompleteOnboarding은 모든 필드를 localStorage에 저장하고 onboardingDone=true로 설정.\n\n## 작업 2: src/pages/OnboardingPage.tsx 새로 생성\nRN glp1-setup.tsx의 3단계 플로우를 웹용 React로 구현. React Native 컴포넌트(SafeAreaView 등) 없이 순수 HTML+inline style 사용.\n\n**Step 1: GLP-1 약물**\n- \"다이어트 주사나 약을 복용하고 있나요?\" — 네/아니요 버튼\n- 네 선택 시: 약물 선택(위고비/마운자로/삭센다/기타), 복용 시작일(text input YYYY-MM-DD), 투약 주기(주1회/매일/기타)\n\n**Step 2: 신체정보**\n- 현재 체중(kg), 키(cm), 나이, 성별(여성/남성) — 필수\n- 구분선 이후 선택: 근육량(kg), 체지방률(%)\n\n**Step 3: 목표 설정 → 영양 플랜 제안**\n- 목표 체중, 목표 기간(2개월/3개월/6개월/1년/직접입력), 운동강도(4단계)\n- \"다음\" 클릭 시 BMR/TDEE 계산 후 맞춤 플랜 표시:\n  - BMR: Mifflin-St Jeor 공식\n  - TDEE = BMR × 활동계수\n  - 일일 칼로리 = max(1200, TDEE - (체중차×7700/목표일수))\n  - 단백질 = 체중×1.6g, 탄수화물 = 칼로리×0.45/4, 지방 = 칼로리×0.25/9\n- \"이대로 시작!\" 클릭 시 uiStore.completeOnboarding() 호출 후 navigate('/')\n- \"수정\" 버튼으로 목표 다시 입력 가능\n\n**UI 스타일 가이드:**\n- 배경: #FFFFFF, 최대너비 480px, 중앙 정렬, 좌우 패딩 24px\n- PRIMARY: #10B981 (초록)\n- 진행바: 상단 녹색 progress bar (step/3)\n- 버튼: 둥근 모서리(border-radius 14px), PRIMARY 색상\n- 입력: border 1.5px solid #E2E8F0, border-radius 12px\n- 모바일 최적화 (max-width 480px)\n\n## 작업 3: src/App.tsx 수정\n- OnboardingPage lazy import 추가\n- AppShell에서 uiStore.onboardingDone 체크:\n  - false면 `/onboarding` 라우트로 redirect\n  - Route path=\"/onboarding\" 추가\n- BOTTOM_NAV_ROUTES에 '/onboarding' 제외\n\n## 주의사항\n- React Native import 금지 (Pressable, SafeAreaView, StyleSheet 등)\n- expo-router 대신 react-router-dom useNavigate 사용\n- 기존 파일의 다른 기능은 건드리지 않는다\n- TypeScript strict 모드 준수 (noUnusedLocals, noUnusedParameters)\n- 완성된 전체 파일 코드 출력",
+      "files": [
+        "src/store/uiStore.ts",
+        "src/pages/OnboardingPage.tsx",
+        "src/App.tsx"
+      ],
+      "output": "code",
+      "verify": "tsc"
+    },
+    {
+      "step": "review",
+      "role": "reviewer",
+      "model": "sonnet",
+      "input": ["dev"],
+      "output": "output/onboarding-review.md",
+      "prompt": "lair-health 온보딩 포팅 코드를 리뷰하라. 확인 사항:\n1. 3단계 플로우가 완전히 구현되어 있는가\n2. BMR/TDEE 계산 공식이 맞는가\n3. React Native import가 남아있지 않은가\n4. uiStore.completeOnboarding이 모든 필드를 저장하는가\n5. App.tsx에서 onboardingDone=false 시 /onboarding 리다이렉트가 작동하는가\n6. TypeScript 에러 가능성\n7~10점 척도로 평가.",
+      "pass": 7
+    }
+  ]
+}

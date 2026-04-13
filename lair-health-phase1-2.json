@@ -1,0 +1,75 @@
+{
+  "project": "lair-health-phase1-2",
+  "codebase": "/Users/bugbookee/Desktop/ai/lair/lair-app-v2",
+  "steps": [
+    {
+      "step": "design",
+      "role": "architect",
+      "model": "opus",
+      "output": "output/lair-health-phase1-2-design.md",
+      "prompt": "You are a senior frontend architect. Design the Phase 1 (scaffold) + Phase 2 (infra) implementation plan for a new Lair mini app called '레어헬스' (ID: lair-health).\n\nContext:\n- Lair repo: /Users/bugbookee/Desktop/ai/lair/lair-app-v2/\n- Reference app: apps/web/ (existing mini app — READ this for patterns)\n- New app target path: apps/lair-health/\n- apps/web package.json deps: react 19.2.4, react-dom 19.2.4, react-router-dom ^7.6.0, zustand ^5.0.0, i18next ^25.1.0, react-i18next ^15.4.0, vite ^7.3.1, typescript ~5.9.3\n- Workspace packages: @bug4city/api-client, @bug4city/bridge, @bug4city/shared, @bug4city/miniapp-sdk\n- miniapp-sdk: packages/miniapp-sdk/src/client.ts (LairMiniAppClient class with auth, device, walk, host, events namespaces)\n\nPurpose of lair-health:\n- Ports GLP-Care (React Native calorie/medication tracking app) to a Lair mini app (React web)\n- GLP-Care source: /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/\n  - Main screen: app/(tabs)/index.tsx (meal tracking dashboard)\n  - Medication screen: app/(tabs)/injection.tsx (medication management + calendar)\n  - API layer: src/lib/medicationApi.ts, src/lib/mealApi.ts (Fastify backend on port 3001)\n\nDesign output must include ALL of the following sections:\n\n## 1. Folder Structure\nFull tree for apps/lair-health/src/ including: pages/, components/, store/, services/, theme/, i18n/, lib/, hooks/\nList every file to be created with 1-line description.\n\n## 2. package.json\nFull content. name: @bug4city/lair-health. Copy deps from apps/web, add nothing extra.\n\n## 3. Vite Config\nFull vite.config.ts. base: '/miniapp/lair-health/', same proxy pattern as apps/web, port 5175.\n\n## 4. TypeScript Config\nFull tsconfig.json, tsconfig.app.json, tsconfig.node.json (strict: true).\n\n## 5. ESLint Config\nFull eslint.config.js (same as apps/web).\n\n## 6. index.html\nFull content. title: 레어헬스. mount on #root.\n\n## 7. src/main.tsx bootstrap\nFull content. Init LairMiniAppClient, call ready(), inject auth token from bridge init data, vConsole in dev. Korean font.\n\n## 8. App.tsx routing\nFull content. Routes:\n- / → MealDashboardPage (홈)\n- /medication → MedicationPage\n- /medication/add → MedicationAddPage\n- /medication/:id/edit → MedicationEditPage\n- /settings → SettingsPage\nUse BrowserRouter with basename. Lazy load all pages.\n\n## 9. Zustand Store Designs\nFor each store (medicationStore, mealStore, uiStore): list state fields + actions with TypeScript types.\n\n## 10. services/api.ts\nFull implementation: fetch wrapper with auth header (from Zustand token), retry once on 401 (token refresh via bridge), NetworkError class, typed parseOrThrow<T>().\n\n## 11. services/medicationApi.ts\nFull implementation ported from mobile/src/lib/medicationApi.ts. Replace authFetch pattern with the new api.ts fetch wrapper. Keep all types (MedicationData, MedicationLogData, etc.).\n\n## 12. services/mealApi.ts\nFull implementation ported from mobile app mealApi patterns. MealLog CRUD, food search, upload URL.\n\n## 13. theme/tokens.ts\nFull: color tokens (PRIMARY #10B981, BG #F8FAFC, CARD #FFFFFF, TEXT #0F172A, SUBTEXT #64748B, etc.), typography scale, spacing scale, radius.\n\n## 14. theme/global.css\nFull: CSS reset + body font (Noto Sans KR) + CSS custom properties from tokens.\n\n## 15. lib/storage.ts\nLocalStorage wrapper. Key prefix: lair-health:.\n\n## 16. lib/lair-client.ts\nInit singleton LairMiniAppClient from @bug4city/miniapp-sdk. Export lairClient. Handle case where not in host app.\n\n## 17. hooks/useSession.ts\nGet session from lairClient.auth.getInitData(). Expose userId, token, nickname, isInHostApp.\n\n## 18. hooks/useMedications.ts\nWrap medicationStore. Expose medications, logs, loading, error, reload, toggleCheck.\n\n## 19. hooks/useMeals.ts\nWrap mealStore. Expose todayLogs, loading, error, createLog, deleteLog.\n\n## 20. i18n setup\nko.json keys for all UI strings used in GLP-Care (medication names, meal dashboard strings). i18n.ts init file.\n\n## 21. components/OfflineBanner.tsx\nFull implementation. Shows when offline.\n\n## 22. components/ErrorBoundary.tsx\nFull React error boundary.\n\nOutput this entire design as a Markdown document. Be specific and complete — codex will implement from this design directly."
+    },
+    {
+      "step": "phase1-scaffold",
+      "role": "developer",
+      "model": "codex",
+      "input": ["design"],
+      "output": "code",
+      "files": [
+        "apps/lair-health/package.json",
+        "apps/lair-health/vite.config.ts",
+        "apps/lair-health/tsconfig.json",
+        "apps/lair-health/tsconfig.app.json",
+        "apps/lair-health/tsconfig.node.json",
+        "apps/lair-health/eslint.config.js",
+        "apps/lair-health/index.html",
+        "apps/lair-health/.env.example",
+        "apps/lair-health/public/.gitkeep",
+        "apps/lair-health/src/main.tsx",
+        "apps/lair-health/src/App.tsx",
+        "apps/lair-health/src/pages/MealDashboardPage.tsx",
+        "apps/lair-health/src/pages/MedicationPage.tsx",
+        "apps/lair-health/src/pages/MedicationAddPage.tsx",
+        "apps/lair-health/src/pages/MedicationEditPage.tsx",
+        "apps/lair-health/src/pages/SettingsPage.tsx"
+      ],
+      "prompt": "Read the design document from the previous step. Implement Phase 1: scaffold the apps/lair-health/ mini app.\n\nCRITICAL RULES:\n1. Create ALL files listed in 'files'. Write complete file contents, not stubs.\n2. Page components must be real placeholder components (not empty), showing a Korean title and a brief description of what the page will contain.\n3. App.tsx must use React Router DOM v7 BrowserRouter with lazy-loaded pages, Suspense fallback.\n4. main.tsx must:\n   - Import LairMiniAppClient from @bug4city/miniapp-sdk\n   - Create singleton lairClient\n   - Call lairClient.ready() on mount\n   - Inject Noto Sans KR via Google Fonts or style tag\n   - Enable vConsole in DEV\n5. package.json name must be @bug4city/lair-health, version 0.0.1, same deps as apps/web reference.\n6. vite.config.ts: base '/miniapp/lair-health/', port 5175, same proxy pattern as apps/web.\n7. tsconfig.json: strict: true, target ES2022.\n8. eslint.config.js: copy apps/web pattern exactly.\n9. .env.example: VITE_API_BASE_URL=https://dev-api.lair.fi\n10. DO NOT modify apps/web or any other existing files.\n\nReference: apps/web/package.json, apps/web/vite.config.ts, apps/web/tsconfig.json, apps/web/eslint.config.js, apps/web/index.html, apps/web/src/main.tsx for exact patterns.\n\nWrite complete, production-quality TypeScript. No TODOs in code."
+    },
+    {
+      "step": "phase2-infra",
+      "role": "developer",
+      "model": "codex",
+      "input": ["design", "phase1-scaffold"],
+      "output": "code",
+      "files": [
+        "apps/lair-health/src/lib/lairClient.ts",
+        "apps/lair-health/src/lib/storage.ts",
+        "apps/lair-health/src/services/api.ts",
+        "apps/lair-health/src/services/medicationApi.ts",
+        "apps/lair-health/src/services/mealApi.ts",
+        "apps/lair-health/src/store/medicationStore.ts",
+        "apps/lair-health/src/store/mealStore.ts",
+        "apps/lair-health/src/store/uiStore.ts",
+        "apps/lair-health/src/theme/tokens.ts",
+        "apps/lair-health/src/theme/global.css",
+        "apps/lair-health/src/hooks/useSession.ts",
+        "apps/lair-health/src/hooks/useMedications.ts",
+        "apps/lair-health/src/hooks/useMeals.ts",
+        "apps/lair-health/src/i18n/ko.json",
+        "apps/lair-health/src/i18n/i18n.ts",
+        "apps/lair-health/src/components/OfflineBanner.tsx",
+        "apps/lair-health/src/components/ErrorBoundary.tsx"
+      ],
+      "prompt": "Read the design document from step 'design' and the Phase 1 scaffold from step 'phase1-scaffold'. Implement Phase 2: infrastructure layer for apps/lair-health/.\n\nReference files to READ (do not modify):\n- /Users/bugbookee/.paperclip/instances/default/projects/c130b9f3-5855-47c1-a128-b16f07ebdc69/12805932-2b62-4dff-93e9-39732f9e3926/_default/mobile/src/lib/medicationApi.ts (port this)\n- /Users/bugbookee/Desktop/ai/lair/lair-app-v2/packages/miniapp-sdk/src/client.ts (SDK reference)\n- /Users/bugbookee/Desktop/ai/lair/lair-app-v2/apps/web/src/store/authStore.ts (Zustand pattern)\n\nImplementation requirements per file:\n\n**lib/lairClient.ts**: Export singleton `lairClient = new LairMiniAppClient()`. Export `isInHostApp()` helper. Handle SSR-safe window access.\n\n**lib/storage.ts**: localStorage wrapper with key prefix 'lair-health:'. getItem<T>, setItem, removeItem, clear (prefix only). All sync.\n\n**services/api.ts**:\n- `apiFetch(path, options)` — adds Authorization header from uiStore token\n- 401 → tries lairClient.auth.requestTokenRefresh(), retries once\n- Network failure → throws NetworkError\n- Export `parseOrThrow<T>(res, label)` → returns body.data\n- Export `NetworkError` class\n- VITE_API_BASE_URL from import.meta.env\n\n**services/medicationApi.ts**: Port mobile/src/lib/medicationApi.ts exactly but:\n- Use apiFetch from services/api.ts instead of custom authFetch\n- Remove AsyncStorage, use storage.ts where needed\n- Keep all TypeScript interfaces (MedicationData, MedicationScheduleData, DosageHistoryData, MedicationLogData, etc.)\n- Keep all functions: fetchMedications, createMedication, updateMedication, deleteMedication, fetchMedicationLogs, upsertMedicationLog\n\n**services/mealApi.ts**:\n- MealLogData interface: { id, userId, loggedAt, foodName, caloriesKcal, proteinG, carbsG, fatG, imageUrl?, isManuallyEdited }\n- fetchMealLogs(date: string): Promise<MealLogData[]>\n- createMealLog(input): Promise<MealLogData>\n- updateMealLog(id, input): Promise<MealLogData>\n- deleteMealLog(id): Promise<void>\n- getAnalyzeUploadUrl(extension: string): Promise<{ uploadUrl: string; fileUrl: string }>\n- analyzeMealImage(imageUrl: string): Promise<{ foodName: string; caloriesKcal: number; proteinG: number; carbsG: number; fatG: number; confidence: number; quotaRemaining: number }>\n\n**store/medicationStore.ts** (Zustand v5):\n- State: medications: MedicationData[], logs: MedicationLogData[], loading, error\n- Actions: loadMedications(), loadLogs(from, to), addMedication(), updateMedication(), deleteMedication(), upsertLog()\n\n**store/mealStore.ts** (Zustand v5):\n- State: todayLogs: MealLogData[], loading, error, selectedDate: string\n- Actions: loadTodayLogs(), setSelectedDate(), addLog(), updateLog(), deleteLog()\n\n**store/uiStore.ts** (Zustand v5):\n- State: token: string | null, isOffline: boolean, theme: 'light' | 'dark'\n- Actions: setToken(), setOffline(), setTheme()\n- Persist token to storage.ts\n\n**theme/tokens.ts**: TypeScript const object. Colors: PRIMARY='#10B981', PRIMARY_DARK='#059669', BG='#F8FAFC', CARD='#FFFFFF', TEXT='#0F172A', SUBTEXT='#64748B', SUCCESS_BG='#D1FAE5', SUCCESS_TEXT='#059669', ERROR='#EF4444', WARNING='#F97316'. Typography: 12/14/15/16/18/24. Spacing: 4/8/12/16/20/24. Radius: 8/12/14/16/999.\n\n**theme/global.css**: Import Noto Sans KR from Google Fonts. CSS reset. CSS vars from tokens. Body background BG color. Mobile-first: max-width 430px centered.\n\n**hooks/useSession.ts**: Read lairClient.auth.getInitData(). Return { userId, token, nickname, isInHostApp, platform }. Fall back to uiStore.token if not in host app.\n\n**hooks/useMedications.ts**: Thin wrapper over medicationStore. Expose medications, logs, loading, error, reload(), toggleCheck(medicationId, scheduleId, date).\n\n**hooks/useMeals.ts**: Thin wrapper over mealStore. Expose todayLogs, loading, error, reload(), addLog(), deleteLog().\n\n**i18n/ko.json**: Korean strings for all UI text from GLP-Care: 'medication.title', 'medication.add', 'medication.empty', 'meal.title', 'meal.add', 'meal.empty', 'meal.protein', 'meal.calories', 'meal.carbs', 'meal.fat', 'common.loading', 'common.error', 'common.retry', 'common.offline', 'common.save', 'common.cancel', 'common.delete', 'common.edit', 'settings.title', 'settings.logout'. At minimum 30 keys.\n\n**i18n/i18n.ts**: init i18next with react-i18next, lng: 'ko', resources: { ko }. Export default i18n instance.\n\n**components/OfflineBanner.tsx**: Shows a fixed bottom banner '#EF4444' bg when uiStore.isOffline. Korean text '오프라인 상태 — 인터넷 연결을 확인해 주세요'. Fade in/out with CSS transition.\n\n**components/ErrorBoundary.tsx**: Class component. Shows Korean error UI with retry button. Catches React render errors.\n\nCRITICAL: Write complete TypeScript code. No TODOs. strict mode compatible. No 'any' unless unavoidable. All imports must be correct relative paths."
+    },
+    {
+      "step": "review",
+      "role": "reviewer",
+      "model": "sonnet",
+      "input": ["design", "phase1-scaffold", "phase2-infra"],
+      "output": "output/lair-health-phase1-2-review.md",
+      "pass": 8,
+      "prompt": "Review the Phase 1 + Phase 2 implementation of the 'lair-health' Lair mini app.\n\nEvaluate the following files in apps/lair-health/:\n- All scaffold files (package.json, vite.config.ts, tsconfig files, eslint.config.js, index.html, main.tsx, App.tsx)\n- All page placeholders\n- lib/lairClient.ts, lib/storage.ts\n- services/api.ts, services/medicationApi.ts, services/mealApi.ts\n- store/medicationStore.ts, store/mealStore.ts, store/uiStore.ts\n- theme/tokens.ts, theme/global.css\n- hooks/useSession.ts, hooks/useMedications.ts, hooks/useMeals.ts\n- i18n/ko.json, i18n/i18n.ts\n- components/OfflineBanner.tsx, components/ErrorBoundary.tsx\n\nScore each category 0-10:\n1. Lair SDK compliance — correct LairMiniAppClient usage, ready() call, auth init from bridge\n2. TypeScript strictness — no implicit any, correct types, strict-compatible\n3. React 19 patterns — no legacy patterns, proper hooks usage\n4. Architecture quality — clean separation, store/service/hook pattern\n5. Code completeness — no empty stubs, no TODOs left\n\nFor each issue found:\n- Severity: CRITICAL / WARN / NOTE\n- File + line\n- What's wrong\n- How to fix\n\nFinal output:\n## Score: X/10\n## Verdict: PASS / FAIL (threshold: 8/10)\n## Issues (list all)\n## Summary (2-3 sentences)\n\nBe strict. FAIL if any CRITICAL issues exist."
+    }
+  ]
+}

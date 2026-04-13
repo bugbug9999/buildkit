@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String            @id @default(uuid())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  authProvider      String
+  externalId        String            @unique
+  email             String?           @unique
+  glp1Drug          String?
+  glp1StartDate     DateTime?
+  weightKg          Float?
+  targetWeightKg    Float?
+  proteinGoalG      Float?
+  subscriptionTier  String            @default("free")
+  premiumExpiredAt  DateTime?
+  streakDays        Int               @default(0)
+  longestStreakDays Int               @default(0)
+  lastTrackedDate   String?
+  isGlp1User        Boolean           @default(false)
+  goalPeriodDays    Int?
+  muscleMassKg      Float?
+  bodyFatPercent    Float?
+  mealLogs          MealLog[]
+  dailySummaries    DailySummary[]
+  weeklyReports     WeeklyReport[]
+  quotas            AIAnalysisQuota[]
+  refreshTokens     RefreshToken[]
+  injections        Injection[]
+  weightLogs        WeightLog[]
+  medications       Medication[]
+  medicationLogs    MedicationLog[]
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  replacedBy String?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model MealLog {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loggedAt         DateTime @default(now())
+  imageKey         String?
+  aiAnalysisId     String?
+  foodName         String
+  caloriesKcal     Float    @default(0)
+  proteinG         Float    @default(0)
+  carbsG           Float    @default(0)
+  fatG             Float    @default(0)
+  isManuallyEdited Boolean  @default(false)
+  dateStr          String
+  mealType         String   @default("snack")
+  servingSize      String?
+  servingCount     Float?   @default(1)
+  sourceType       String   @default("manual")
+  externalFoodId   String?
+
+  @@index([userId, dateStr])
+}
+
+model DailySummary {
+  id                     String  @id @default(uuid())
+  userId                 String
+  user                   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date                   String
+  totalCaloriesKcal      Float   @default(0)
+  totalProteinG          Float   @default(0)
+  totalCarbsG            Float   @default(0)
+  totalFatG              Float   @default(0)
+  proteinAchievementRate Float   @default(0)
+  isTracked              Boolean @default(false)
+  mealCount              Int     @default(0)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model WeeklyReport {
+  id                        String    @id @default(uuid())
+  userId                    String
+  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart                 String
+  avgProteinAchievementRate Float     @default(0)
+  avgCaloriesKcal           Float     @default(0)
+  trackedDays               Int       @default(0)
+  shareCount                Int       @default(0)
+  shareCardGeneratedAt      DateTime?
+
+  @@unique([userId, weekStart])
+}
+
+model AIAnalysisQuota {
+  id         String @id @default(uuid())
+  userId     String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       String
+  usedCount  Int    @default(0)
+  limitCount Int    @default(5)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model Injection {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String
+  time      String
+  drug      String
+  dosageMg  Float
+  site      String
+  memo      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model WeightLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weightKg  Float
+  date      String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model Medication {
+  id             String               @id @default(uuid())
+  userId         String
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  frequency      String               @default("daily")
+  timesPerDay    Int?
+  timesPerWeek   Int?
+  timeOfDay      String?
+  form           String               @default("oral")
+  dosage         String               @default("")
+  frequencyDays  String[]             @default([])
+  condition      String               @default("any")
+  memo           String               @default("")
+  colorIndex     Int                  @default(0)
+  isActive       Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  schedules      MedicationSchedule[]
+  logs           MedicationLog[]
+
+  @@index([userId, isActive])
+}
+
+model MedicationSchedule {
+  id           String          @id @default(uuid())
+  medicationId String
+  medication   Medication      @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  timeSlot     String
+  timeDetail   String
+  createdAt    DateTime        @default(now())
+  logs         MedicationLog[]
+
+  @@index([medicationId])
+}
+
+model MedicationLog {
+  id           String             @id @default(uuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicationId String
+  medication   Medication         @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  scheduleId   String
+  schedule     MedicationSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  date         String
+  status       String             @default("pending")
+  checkedAt    DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@unique([medicationId, scheduleId, date])
+  @@index([userId, date])
+  @@index([medicationId, date])
+}
+
+model FoodCache {
+  id           String   @id @default(uuid())
+  externalId   String   @unique
+  foodName     String
+  caloriesKcal Float
+  proteinG     Float
+  carbsG       Float
+  fatG         Float
+  servingSize  String?
+  manufacturer String?
+  source       String   @default("mfds")
+  cachedAt     DateTime @default(now())
+}

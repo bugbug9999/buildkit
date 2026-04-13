@@ -1,0 +1,117 @@
+{
+  "project": "lair-health-capacitor",
+  "codebase": "/Users/bugbookee/Desktop/buildkit/apps/lair-health",
+  "steps": [
+    {
+      "step": "architecture-design",
+      "role": "CTO",
+      "model": "opus",
+      "prompt": "lair-health 프로젝트의 Capacitor 크로스플랫폼 전환 아키텍처를 설계하라.\n\n## 현재 상태\n- React 19 + Vite + TypeScript + Zustand 기반 GLP-1 건강관리 미니앱\n- Lair 미니앱(WebView)으로 배포 중\n- 인증: @bug4city/miniapp-sdk의 lairClient.auth.getInitData()로 토큰 획득\n- 4개 파일이 Lair SDK 직접 의존: src/lib/lairClient.ts, src/hooks/useSession.ts, src/services/api.ts, src/main.tsx\n- 백엔드에 POST /auth/social (카카오/애플/구글) + POST /auth/refresh + DELETE /auth/logout 이미 구현됨\n- dev 모드에서 mock- prefix 토큰으로 인증 우회 가능\n\n## 목표\n코드베이스 하나로 3 플랫폼 동시 지원: Lair 미니앱(현재), iOS 앱스토어, Android 앱스토어\n미니앱 기존 기능 100% 보존하면서 Capacitor 앱 추가\n\n## 설계해야 할 것\n\n### 1. 플랫폼 추상화 레이어\n- src/platform/ 디렉토리 구조\n- PlatformAuth 인터페이스 (initialize, getSession, login, refreshToken, logout)\n- PlatformType 감지 로직 (miniapp: window.ReactNativeWebView, capacitor: window.Capacitor.isNativePlatform(), web: fallback)\n- miniapp 구현: 기존 lairClient 코드를 그대로 래핑\n- capacitor 구현: /auth/social API 호출 + @capacitor/browser로 OAuth redirect\n- 동적 import로 번들 분리 (미니앱 빌드에 Capacitor 코드 포함 안 되게)\n\n### 2. 기존 4개 파일 리팩토링 계획\n- main.tsx: lairClient.ready() → platformAuth.initialize()\n- useSession.ts: lairClient.auth.getInitData() → platformAuth.getSession()\n- api.ts: lairClient.auth.requestTokenRefresh() → platformAuth.refreshToken()\n- lairClient.ts: src/platform/miniapp/ 안으로 이동, 직접 import 제거\n\n### 3. Capacitor 설정\n- capacitor.config.ts 스펙 (appId, webDir, server 설정)\n- vite.config.ts base path 분기: VITE_PLATFORM=capacitor이면 './', 아니면 '/miniapp/lair-health/'\n- package.json scripts: build:miniapp, build:capacitor, cap:ios, cap:android\n\n### 4. LoginPage 설계\n- Capacitor 전용 로그인 화면 (카카오/애플/구글 버튼)\n- App.tsx 라우팅에서 플랫폼이 capacitor이고 토큰 없으면 /login으로 리다이렉트\n- 미니앱에서는 /login 라우트 불필요 (SDK가 자동 인증)\n\n### 5. 주의사항\n- @bug4city/miniapp-sdk는 workspace:* 의존성 — Capacitor 빌드 시 dynamic import로 격리해야 트리쉐이킹 가능\n- Capacitor WebView에서 lairClient.ready() 호출하면 hang → 반드시 플랫폼 분기\n- CORS: Capacitor는 capacitor://localhost에서 요청 → 백엔드 CORS 설정 필요\n- input[type=file]은 Capacitor WebView에서도 동작하므로 카메라 추상화는 v2로 미룸\n\n출력: 각 파일의 인터페이스, import 관계, 수정 계획을 포함한 상세 설계 문서. 코드 스니펫 포함.",
+      "output": ".buildkit/architecture.md"
+    },
+    {
+      "step": "create-confirm-modal-and-dashboard",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "2개 파일을 구현하라. 기존 프로젝트의 스타일/패턴을 정확히 따라야 한다.\n\n## 1. src/components/ConfirmModal.tsx (신규 생성)\n현재 ReportPage.tsx에서 import하지만 파일이 없어서 빌드 에러가 난다.\n\nReportPage에서 사용하는 방식:\n```tsx\n<ConfirmModal\n  title=\"결제 확인\"\n  message={`${amount.toLocaleString()}원이 결제됩니다. 계속하시겠어요?`}\n  confirmText=\"결제하기\"\n  cancelText=\"취소\"\n  onConfirm={() => { ... }}\n  onCancel={() => setPendingCheckout(null)}\n/>\n```\n\nProps 인터페이스:\n- title: string\n- message: string\n- confirmText: string\n- cancelText: string  \n- onConfirm: () => void\n- onCancel: () => void\n\n디자인:\n- 반투명 검정 오버레이 (position: fixed, inset: 0, zIndex: 9999)\n- 중앙 흰색 카드 (max-width: 340px, border-radius: 20px, padding: 24px)\n- title: fontSize 18, fontWeight 700, color #0F172A\n- message: fontSize 15, lineHeight 1.6, color #64748B, marginTop 12\n- 버튼 영역: display flex, gap 10, marginTop 20\n- 취소 버튼: flex 1, height 44, border-radius 12, border 1px solid #CBD5E1, backgroundColor white\n- 확인 버튼: flex 1, height 44, border-radius 12, backgroundColor #10B981, color white, fontWeight 700\n- export: named export `ConfirmModal`\n\n## 2. src/pages/MealDashboardPage.tsx (완전 재작성)\n현재는 PlaceholderCard 설명만 있는 더미 페이지다. 실제 동작하는 대시보드로 교체하라.\n\n사용할 store/hook:\n- useMealStore: { todayLogs, loading, error, selectedDate, loadTodayLogs, setSelectedDate, addLog, removeLog }\n- useUIStore: { goalCalories, goalProtein, goalCarbs, goalFat }\n\n사용할 API (src/services/mealApi.ts):\n- getAnalyzeUploadUrl(extension) → { uploadUrl, fileUrl }\n- analyzeMealImage(imageUrl) → { foodName, caloriesKcal, proteinG, carbsG, fatG, confidence, quotaRemaining }\n- createMealLog(input) → MealLogData\n\n페이지 구성:\n1. 상단 헤더: 오늘 날짜 표시\n2. 영양 요약 카드: 칼로리/단백질/탄수화물/지방 — 목표 대비 섭취량 표시 (프로그레스 바)\n   - 각 영양소: todayLogs.reduce((sum, l) => sum + l.caloriesKcal, 0) 등으로 합산\n   - 목표: useUIStore의 goalCalories 등\n3. AI 식사 분석 섹션:\n   - input[type=file][accept=image/*] 버튼\n   - 파일 선택 시: extension 추출 → getAnalyzeUploadUrl → fetch(uploadUrl, {method:'PUT',body:file}) → analyzeMealImage(fileUrl)\n   - 분석 결과 미리보기 (foodName, 영양소, confidence)\n   - '기록 저장' 버튼 → addLog({loggedAt: new Date().toISOString(), ...분석결과})\n   - 로딩/에러 상태 처리\n4. 오늘의 식사 기록 목록: todayLogs 순회, 각 항목에 foodName, caloriesKcal 표시\n5. 하단: <BottomNav /> import\n\nuseEffect에서 loadTodayLogs() 호출.\n\n스타일: 기존 프로젝트 패턴 따름 (inline style, Noto Sans KR, maxWidth 430px, safe-area padding, 카드형 레이아웃, primary color #10B981)\npageStyle padding-bottom은 100px (BottomNav 높이 고려)\n\n모든 텍스트 한국어. useTranslation 사용하되 없는 키는 하드코딩.",
+      "input": ["architecture-design"],
+      "files": [
+        "src/components/ConfirmModal.tsx",
+        "src/pages/MealDashboardPage.tsx"
+      ],
+      "output": "code",
+      "verify": "tsc"
+    },
+    {
+      "step": "review-dashboard",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "이전 스텝에서 생성/수정된 파일을 설계 기준으로 검토하라.\n\n## 채점 기준 (각 항목 0~2점, 총 10점)\n1. ConfirmModal이 ReportPage의 import/사용 방식과 100% 호환되는가\n2. MealDashboardPage가 useMealStore/useUIStore를 올바르게 사용하는가\n3. AI 식사 분석 흐름이 정확한가 (getAnalyzeUploadUrl → PUT upload → analyzeMealImage → addLog)\n4. TypeScript 타입 에러 없는가\n5. BottomNav가 포함되어 있는가, 스타일이 기존 프로젝트와 일관되는가\n\n## 출력 형식\n```json\n{\n  \"score\": N,\n  \"criteria\": { \"confirm_modal_compat\": N, \"store_usage\": N, \"ai_analysis_flow\": N, \"type_safety\": N, \"style_consistency\": N },\n  \"issues\": [\"구체적 문제 설명\"],\n  \"verdict\": \"pass\" | \"fail\"\n}\n```\nscore < 7이면 verdict: fail",
+      "input": ["create-confirm-modal-and-dashboard"],
+      "output": ".buildkit/review-dashboard.md",
+      "pass": 7
+    },
+    {
+      "step": "complete-medication-pages",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "3개 플레이스홀더 페이지를 실제 동작하는 페이지로 완전 재작성하라.\n\n## 사용 가능한 Store/API\n\nmedicationStore (src/store/medicationStore.ts):\n- medications: MedicationData[]\n- logs: MedicationLogData[]\n- loading, error\n- loadMedications(), loadLogs(from, to), addMedication(input), updateMedication(id, input), removeMedication(id), upsertLog({scheduleId, scheduledDate, status})\n\nuseMedications hook (src/hooks/useMedications.ts):\n- medications, logs, loading, error, reload()\n- toggleCheck(medicationId, scheduleId, date) — TAKEN↔MISSED 토글\n\n### 타입 정의 (medicationApi.ts에서):\nMedicationData: { id, name, form:'ORAL'|'INJECTION'|'OTHER', colorIndex, memo, isActive, schedules: MedicationScheduleData[], dosageHistory: DosageHistoryData[] }\nMedicationScheduleData: { id, medicationId, dayOfWeek, timeSlot:'MORNING'|'LUNCH'|'EVENING'|'BEDTIME', timeDetail, condition:'FASTING'|'BEFORE_MEAL'|'AFTER_MEAL'|'ANY', isActive }\nMedicationLogData: { id, scheduleId, userId, scheduledDate, status:'TAKEN'|'MISSED'|'SKIPPED', checkedAt, dosageAtTime }\nCreateMedicationInput: { name, form?, colorIndex?, memo?, schedules: ScheduleInput[] }\nScheduleInput: { dayOfWeek?, timeSlot, timeDetail, condition?, dosage? }\nUpdateMedicationInput: { name?, form?, colorIndex?, memo?, schedules?: ScheduleInput[] }\n\n---\n\n## 1. src/pages/MedicationPage.tsx (완전 재작성)\n\n구성:\n1. 헤더: '복약 관리' 타이틀 + '약 추가' 버튼 (Link to /medication/add)\n2. 오늘의 체크리스트 섹션:\n   - 오늘 날짜의 모든 스케줄 표시\n   - 각 항목: 약 이름 + timeSlot(아침/점심/저녁/취침) + 복용 상태 체크 버튼\n   - 체크 시 toggleCheck(medicationId, scheduleId, todayStr) 호출\n   - TAKEN이면 초록색 체크, MISSED이면 빨간색\n3. 등록된 약 목록: medications 순회\n   - 각 약: name, form 표시, 편집 버튼 (Link to /medication/{id}/edit)\n   - isActive=false면 비활성 스타일\n4. BottomNav\n\nuseEffect에서 loadMedications() + loadLogs(todayStr, todayStr) 호출\ntodayStr: new Date()에서 YYYY-MM-DD 추출 (로컬 타임존)\n\n## 2. src/pages/MedicationAddPage.tsx (완전 재작성)\n\n구성:\n1. 헤더: '새 약 등록'\n2. 폼:\n   - 약 이름 (text input, 필수)\n   - 형태 선택 (ORAL/INJECTION/OTHER, 라디오 버튼, 기본값 ORAL)\n   - 스케줄 추가 영역:\n     - timeSlot 선택 (MORNING/LUNCH/EVENING/BEDTIME)\n     - timeDetail (text input, 예: '08:00')\n     - condition 선택 (FASTING/BEFORE_MEAL/AFTER_MEAL/ANY, 기본값 ANY)\n     - dosage (text input, 예: '0.25mg')\n     - '스케줄 추가' 버튼으로 여러 개 추가 가능\n   - 메모 (textarea, 선택)\n3. '저장' 버튼: addMedication(input) 호출 → 성공 시 navigate('/medication')\n4. '취소' 버튼: navigate('/medication')\n\nreact-router-dom의 useNavigate 사용\n유효성: name 비어있으면 저장 불가\n\n## 3. src/pages/MedicationEditPage.tsx (완전 재작성)\n\n구성:\n1. useParams로 id 추출\n2. useEffect에서 loadMedications() → medications에서 id로 해당 약 찾기\n3. 찾은 약 데이터로 폼 초기화 (MedicationAddPage와 유사한 폼)\n4. '저장' 버튼: updateMedication(id, input) → navigate('/medication')\n5. '삭제' 버튼: ConfirmModal로 확인 → removeMedication(id) → navigate('/medication')\n6. '취소' 버튼: navigate('/medication')\n\n약을 찾지 못하면 '약 정보를 찾을 수 없습니다' 에러 표시\n\n---\n\n스타일: 기존 프로젝트 패턴 (inline style, Noto Sans KR, maxWidth 430px, primary #10B981, 카드형)\n모든 텍스트 한국어.\nBottomNav는 MedicationPage에만 포함 (Add/Edit 페이지는 전체 화면 폼).\nimport 경로 정확히: '../store/medicationStore', '../hooks/useMedications', '../components/BottomNav', '../components/ConfirmModal'",
+      "input": ["architecture-design"],
+      "files": [
+        "src/pages/MedicationPage.tsx",
+        "src/pages/MedicationAddPage.tsx",
+        "src/pages/MedicationEditPage.tsx"
+      ],
+      "output": "code",
+      "verify": "tsc"
+    },
+    {
+      "step": "review-medication",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "이전 스텝에서 재작성된 투약 관리 페이지 3개를 검토하라.\n\n## 채점 기준 (각 항목 0~2점, 총 10점)\n1. MedicationPage: useMedications hook으로 데이터 로딩하고 체크리스트가 동작하는가\n2. MedicationAddPage: CreateMedicationInput 타입에 맞게 폼 데이터를 구성하고 addMedication API를 호출하는가\n3. MedicationEditPage: 기존 데이터로 폼 초기화하고, updateMedication/removeMedication이 올바르게 호출되는가\n4. TypeScript 타입 에러 없는가 (import 경로, 타입 매칭)\n5. UI 완성도: BottomNav 포함, 로딩/에러 상태, 한국어 텍스트, 스타일 일관성\n\n## 출력 형식\n```json\n{\n  \"score\": N,\n  \"criteria\": { \"medication_list\": N, \"add_form\": N, \"edit_form\": N, \"type_safety\": N, \"ui_completeness\": N },\n  \"issues\": [\"구체적 문제\"],\n  \"verdict\": \"pass\" | \"fail\"\n}\n```\nscore < 7이면 verdict: fail",
+      "input": ["complete-medication-pages"],
+      "output": ".buildkit/review-medication.md",
+      "pass": 7
+    },
+    {
+      "step": "platform-abstraction",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "플랫폼 추상화 레이어를 구현하고 기존 Lair SDK 의존 코드를 리팩토링하라.\n설계 문서(.buildkit/architecture.md)를 참조하되, 아래 구체적 지시를 우선한다.\n\n## 신규 파일 생성\n\n### src/platform/types.ts\n```typescript\nexport type PlatformType = 'miniapp' | 'capacitor' | 'web';\n\nexport interface PlatformAuth {\n  initialize(): Promise<void>;\n  getSession(): { userId: string | null; token: string | null; nickname: string | null } | null;\n  refreshToken(): Promise<string | null>;\n  logout(): void;\n}\n```\n\n### src/platform/detect.ts\n```typescript\nimport type { PlatformType } from './types';\n\nexport function detectPlatform(): PlatformType {\n  if (typeof window === 'undefined') return 'web';\n  if ((window as Record<string, unknown>).Capacitor && \n      typeof (window as Record<string, unknown> & { Capacitor: { isNativePlatform: () => boolean } }).Capacitor.isNativePlatform === 'function' &&\n      (window as Record<string, unknown> & { Capacitor: { isNativePlatform: () => boolean } }).Capacitor.isNativePlatform()) {\n    return 'capacitor';\n  }\n  if ((window as Record<string, unknown>).ReactNativeWebView) return 'miniapp';\n  return 'web';\n}\n```\n주의: any 사용 금지. Record<string, unknown>으로 타입 단언.\n\n### src/platform/miniapp/auth.ts\n기존 lairClient.ts + useSession.ts + api.ts의 Lair SDK 로직을 이 파일로 이동:\n- LairMiniAppClient를 dynamic import\n- initialize(): lairClient.ready() 호출\n- getSession(): lairClient.auth.getInitData()에서 userId, token, nickname 추출\n- refreshToken(): lairClient.auth.requestTokenRefresh()에서 token 추출 후 localStorage 저장\n- logout(): localStorage.clear() + window.location.reload()\n\n주의: @bug4city/miniapp-sdk import는 이 파일에서만. 다른 곳에서 절대 import하지 않는다.\n\n### src/platform/capacitor/auth.ts\n앱스토어 버전용 인증:\n- initialize(): 저장된 토큰 있으면 로드, 없으면 noop\n- getSession(): localStorage에서 토큰/유저정보 로드\n- refreshToken(): POST /health-api/auth/refresh 호출 (fetch 직접 사용, apiFetch 아님 — 순환참조 방지)\n- logout(): DELETE /health-api/auth/logout + localStorage.clear() + window.location.reload()\n\nAPI base URL은 import.meta.env.VITE_API_BASE_URL ?? 'https://dev-api.lair.fi' 사용\n\n### src/platform/index.ts\n```typescript\nimport { detectPlatform } from './detect';\nimport type { PlatformAuth, PlatformType } from './types';\n\nexport type { PlatformAuth, PlatformType };\nexport { detectPlatform };\n\nlet _auth: PlatformAuth | null = null;\nlet _platform: PlatformType | null = null;\n\nexport function getPlatformType(): PlatformType {\n  _platform ??= detectPlatform();\n  return _platform;\n}\n\nexport async function getPlatformAuth(): Promise<PlatformAuth> {\n  if (_auth) return _auth;\n  const platform = getPlatformType();\n  if (platform === 'miniapp') {\n    const { MiniappAuth } = await import('./miniapp/auth');\n    _auth = new MiniappAuth();\n  } else {\n    const { CapacitorAuth } = await import('./capacitor/auth');\n    _auth = new CapacitorAuth();\n  }\n  return _auth;\n}\n```\n\n## 기존 파일 수정\n\n### src/main.tsx\n- lairClient import 제거\n- import { getPlatformAuth } from './platform' 추가\n- Bootstrap useEffect에서:\n  - getPlatformAuth().then(auth => auth.initialize()) 호출\n  - auth.getSession()으로 token/theme 설정\n  - lairClient.ready() 호출 제거\n- enableDevConsole은 그대로 유지\n\n### src/hooks/useSession.ts\n- lairClient import 제거\n- import { getPlatformType } from '../platform' 추가\n- platform에서 세션 데이터를 가져오되, getPlatformAuth는 async이므로:\n  - localStorage에서 직접 읽는 동기 방식 유지 (현재 패턴과 동일)\n  - isInHostApp: getPlatformType() !== 'web'\n  - platform: getPlatformType()\n\n### src/services/api.ts\n- lairClient import 제거\n- refreshToken 함수를 async로 변경:\n  - const { getPlatformAuth } = await import('../platform');\n  - const auth = await getPlatformAuth();\n  - return auth.refreshToken();\n\n### src/lib/lairClient.ts\n- 이 파일은 삭제하거나 빈 re-export로 남기지 말 것\n- src/platform/miniapp/auth.ts 안에서만 LairMiniAppClient를 import하므로 이 파일은 삭제\n- 다른 곳에서 import하는 곳이 없는지 확인 후 삭제\n\n---\n\n핵심 원칙:\n1. 미니앱 빌드 시 Capacitor 코드가 번들에 포함되면 안 됨 (dynamic import)\n2. Capacitor 빌드 시 @bug4city/miniapp-sdk가 번들에 포함되면 안 됨 (dynamic import)\n3. 기존 기능 100% 보존 — 미니앱 동작이 변하면 안 됨\n4. any 타입 사용 금지",
+      "input": ["architecture-design"],
+      "files": [
+        "src/platform/types.ts",
+        "src/platform/detect.ts",
+        "src/platform/miniapp/auth.ts",
+        "src/platform/capacitor/auth.ts",
+        "src/platform/index.ts",
+        "src/main.tsx",
+        "src/hooks/useSession.ts",
+        "src/services/api.ts",
+        "src/lib/lairClient.ts"
+      ],
+      "output": "code",
+      "verify": "tsc"
+    },
+    {
+      "step": "review-platform",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "플랫폼 추상화 레이어와 리팩토링된 파일들을 검토하라.\n\n## 채점 기준 (각 항목 0~2점, 총 10점)\n1. 미니앱 회귀 안전성: 미니앱 환경에서 기존과 동일하게 동작하는가 (lairClient.ready, getInitData, requestTokenRefresh 흐름 보존)\n2. 플랫폼 격리: dynamic import로 번들 분리가 올바른가 (@bug4city/miniapp-sdk가 capacitor 빌드에 포함 안 되는가)\n3. 타입 안전성: any 사용 없이 올바른 타입 단언을 사용하는가\n4. 순환 참조 없음: platform/capacitor/auth.ts가 api.ts를 import하지 않는가\n5. 인터페이스 일관성: MiniappAuth와 CapacitorAuth 모두 PlatformAuth 인터페이스를 정확히 구현하는가\n\n## 출력 형식\n```json\n{\n  \"score\": N,\n  \"criteria\": { \"miniapp_regression\": N, \"bundle_isolation\": N, \"type_safety\": N, \"no_circular_refs\": N, \"interface_consistency\": N },\n  \"issues\": [\"구체적 문제\"],\n  \"verdict\": \"pass\" | \"fail\"\n}\n```\nscore < 7이면 verdict: fail",
+      "input": ["platform-abstraction"],
+      "output": ".buildkit/review-platform.md",
+      "pass": 7
+    },
+    {
+      "step": "capacitor-setup",
+      "role": "Developer",
+      "model": "codex",
+      "prompt": "Capacitor 설정과 LoginPage를 구현하라.\n\n## 1. capacitor.config.ts (신규 생성, 프로젝트 루트)\n```typescript\nimport type { CapacitorConfig } from '@capacitor/cli';\n\nconst config: CapacitorConfig = {\n  appId: 'fi.lair.health',\n  appName: 'Lair Health',\n  webDir: 'dist',\n  server: {\n    androidScheme: 'https',\n  },\n};\n\nexport default config;\n```\n\n## 2. vite.config.ts (수정)\n기존 내용 유지하되 base path만 분기:\n```typescript\nconst isCapacitor = process.env.VITE_PLATFORM === 'capacitor';\n\nexport default defineConfig({\n  base: isCapacitor ? './' : '/miniapp/lair-health/',\n  // ... 나머지 기존 설정 모두 유지 (plugins, define, server)\n});\n```\n\n기존 proxy 설정, define, plugins 절대 삭제하지 마라.\n\n## 3. package.json (수정)\nscripts에 추가 (기존 scripts 유지):\n```json\n\"build:miniapp\": \"tsc -b && vite build\",\n\"build:capacitor\": \"VITE_PLATFORM=capacitor tsc -b && VITE_PLATFORM=capacitor vite build\"\n```\n\ndevDependencies에 추가:\n- @capacitor/cli: ^7.0.0\n- @capacitor/core: ^7.0.0\n\n기존 dependencies/devDependencies 절대 삭제하지 마라.\n\n## 4. src/pages/LoginPage.tsx (신규 생성)\nCapacitor 전용 소셜 로그인 화면.\n\n구성:\n1. 전체 화면 레이아웃 (minHeight: 100dvh, 중앙 정렬)\n2. 앱 로고/타이틀: 'Lair Health' + 부제 'GLP-1 사용자를 위한 건강관리'\n3. 소셜 로그인 버튼 3개:\n   - 카카오 로그인 (backgroundColor: #FEE500, color: #000)\n   - 애플 로그인 (backgroundColor: #000, color: #fff)\n   - 구글 로그인 (backgroundColor: #fff, border: 1px solid #ddd, color: #333)\n4. 각 버튼 클릭 시:\n   - 로딩 상태 표시\n   - 실제 OAuth 로직은 TODO 주석으로 남김 (OAuth redirect URL은 아직 미정)\n   - 임시로 mock 토큰 사용: POST /health-api/auth/social { provider, accessToken: 'mock-test', externalIdHint: 'test-user-1' }\n   - 응답의 accessToken을 localStorage 'lair-health:token'에 저장\n   - navigate('/')로 이동\n5. 하단: '레어 미니앱에서 접속 중이신가요? 미니앱을 이용해 주세요.'\n\nstyle: 기존 프로젝트 패턴, maxWidth 430px, Noto Sans KR\n\n## 5. src/App.tsx (수정)\n\n변경사항:\n- const LoginPage = lazy(() => import('./pages/LoginPage')) 추가\n- import { getPlatformType } from './platform' 추가\n- AppShell 컴포넌트에서:\n  - const platform = getPlatformType();\n  - Capacitor 플랫폼이고 토큰 없으면 /login으로 리다이렉트\n  - Routes에 <Route path=\"/login\" element={<LoginPage />} /> 추가\n  - 미니앱에서는 /login 라우트에 접근해도 /로 리다이렉트\n\n기존 라우트, onboarding guard, ErrorBoundary, OfflineBanner 모두 유지.\n\n---\n\n주의:\n- 기존 App.tsx의 SettingsPage lazy import 관련 코드는 제거해도 됨 (현재 /settings → /profile 리다이렉트)\n- SettingsPage.tsx 파일 자체는 건드리지 마라\n- Capacitor 패키지는 devDependencies에 추가만 — 실제 npx cap init은 나중에 수동 실행",
+      "input": ["architecture-design", "platform-abstraction"],
+      "files": [
+        "capacitor.config.ts",
+        "vite.config.ts",
+        "package.json",
+        "src/pages/LoginPage.tsx",
+        "src/App.tsx"
+      ],
+      "output": "code",
+      "verify": "tsc"
+    },
+    {
+      "step": "final-review",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "전체 프로젝트를 종합 검토하라. 이 검토는 최종 품질 게이트다.\n\n## 검토 범위\n1. 모든 페이지가 실제 동작하는 코드인지 (플레이스홀더 텍스트만 있으면 실패)\n2. 모든 import가 유효한 파일을 가리키는지\n3. BottomNav가 필요한 페이지에 포함되어 있는지 (홈, 기록, 투약, 리포트, 프로필 — 5개 메인 페이지)\n4. 투약 관리가 완전한지 (목록, 추가, 수정, 삭제, 체크리스트)\n5. 식단 대시보드가 완전한지 (영양 요약, AI 분석, 기록 목록)\n6. 플랫폼 추상화가 올바른지 (미니앱/Capacitor 분기)\n7. Capacitor 설정이 올바른지 (config, vite, package.json, LoginPage)\n8. TypeScript 컴파일 에러 가능성\n9. 미니앱 기능 회귀 없음\n10. 기존 동작하는 페이지들(OnboardingPage, LogPage, ReportPage, ProfilePage)이 손상되지 않았는지\n\n## 채점 기준 (각 항목 0~1점, 총 10점)\n\n## 출력 형식\n```json\n{\n  \"score\": N,\n  \"criteria\": {\n    \"no_placeholder_pages\": N,\n    \"valid_imports\": N,\n    \"bottom_nav_complete\": N,\n    \"medication_complete\": N,\n    \"dashboard_complete\": N,\n    \"platform_abstraction\": N,\n    \"capacitor_config\": N,\n    \"type_safety\": N,\n    \"miniapp_regression\": N,\n    \"existing_pages_intact\": N\n  },\n  \"issues\": [\"구체적 문제\"],\n  \"verdict\": \"pass\" | \"fail\",\n  \"summary\": \"전체 요약 2~3줄\"\n}\n```\nscore < 7이면 verdict: fail\n\n특히 주의: 이전에 RN→웹뷰 포팅 시 하단 네비바와 투약 기능이 생략된 전례가 있다. 이번에는 절대 생략되면 안 된다.",
+      "input": [
+        "create-confirm-modal-and-dashboard",
+        "complete-medication-pages",
+        "platform-abstraction",
+        "capacitor-setup"
+      ],
+      "output": ".buildkit/review-final.md",
+      "pass": 7
+    }
+  ]
+}

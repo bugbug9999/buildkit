@@ -1,0 +1,9 @@
+[
+  {
+    "name": "onboarding-page",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/OnboardingPage.tsx",
+    "instruction": "lair-health 웹앱용 OnboardingPage.tsx를 새로 만들어라. React + TypeScript + inline style. React Native import 금지.\n\n## 3단계 플로우\n\n**Step 1: GLP-1 약물**\n- 질문: '다이어트 주사나 약을 복용하고 있나요?'\n- 네/아니요 큰 버튼\n- 네 선택 시 추가: 약물 선택(위고비/마운자로/삭센다/기타 chips), 복용 시작일(text input YYYY-MM-DD), 투약 주기(주1회/매일/기타 chips)\n\n**Step 2: 신체정보**\n- 현재 체중(kg), 키(cm), 나이, 성별(여성/남성) 필수\n- 구분선 후 선택: 근육량(kg), 체지방률(%)\n\n**Step 3: 목표 + 영양 플랜**\n- 목표 체중(kg), 목표 기간(2개월60일/3개월90일/6개월180일/1년365일/직접입력 chips)\n- 운동강도 4개 카드(거의안움직여요1.2/가벼운활동1.375/적당한운동1.55/활발한운동1.725)\n- '다음' 클릭 → showSuggestion=true → 제안 카드 표시\n- 제안 카드: 일일칼로리, 단백질g, 탄수화물g, 지방g 표시 + '이대로 시작!' 버튼\n- '수정할게요' 버튼으로 editingGoal 모드로 전환\n\n## 계산 공식\n```\nBMR(female) = 10*kg + 6.25*cm - 5*age - 161\nBMR(male)   = 10*kg + 6.25*cm - 5*age + 5\nTDEE = BMR * activityMultiplier\ndailyDeficit = (currentKg - goalKg) * 7700 / periodDays\ndailyCalories = max(1200, round((TDEE - dailyDeficit) / 10) * 10)\nproteinG = round(currentKg * 1.6)\ncarbsG = round(dailyCalories * 0.45 / 4)\nfatG = round(dailyCalories * 0.25 / 9)\n```\n\n## 완료 처리\nuseUIStore().completeOnboarding(data) 호출 후 useNavigate()로 '/' navigate.\n\n## 스타일\n- 배경 #FFFFFF, maxWidth 480px, margin auto, padding 24px\n- PRIMARY #10B981\n- 상단 progress bar: step/3 퍼센트, 높이 6px, 배경 #E2E8F0, 채움 #10B981\n- 큰버튼: border 2px solid #E2E8F0, border-radius 14px, active 시 borderColor #10B981 backgroundColor #F0FDFA\n- chip: border 1.5px solid #E2E8F0, border-radius 20px, active 시 borderColor #10B981\n- input: border 1.5px solid #E2E8F0, border-radius 12px, padding 12px 16px\n- 다음/완료 버튼: backgroundColor #10B981, color white, border-radius 14px, padding 16px\n- 제안카드: backgroundColor #F0FDFA, border 1px solid #99F6E4, border-radius 20px"
+  }
+]

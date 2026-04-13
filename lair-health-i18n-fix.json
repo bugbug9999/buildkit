@@ -1,0 +1,34 @@
+[
+  {
+    "name": "fix-LogPage-i18n",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/LogPage.tsx",
+    "output": "code",
+    "prompt": "src/pages/LogPage.tsx 전체를 수정해서 출력해라. ```tsx 블록으로.\n\n## 수정사항 1가지만\n\n**빈 상태 텍스트 i18n 적용**\n- `\"오늘 기록이 없습니다\"` 하드코딩 → `{t('log.empty')}` 로 교체\n- (빈 상태 CTA `<a>` 태그는 이미 있으므로 유지)\n\n기존 코드의 나머지 모든 로직, import, 스타일은 그대로 유지."
+  },
+  {
+    "name": "fix-ReportPage-i18n",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/ReportPage.tsx",
+    "output": "code",
+    "prompt": "src/pages/ReportPage.tsx 전체를 수정해서 출력해라. ```tsx 블록으로.\n\n## 수정사항 3가지\n\n1. **streak 하드코딩 제거**\n   - `{report.streak}일` → `{t('report.weekly.streak', { count: report.streak })}`\n   - WeeklyReportCard 컴포넌트 내부\n\n2. **주수 하드코딩 제거**\n   - `{totalWeeks || 12}주` → `{t('report.heatmap.weeks', { count: totalWeeks || 12 })}`\n   - HeatmapGrid 컴포넌트 내부\n\n3. **공유카드 생성 버튼 i18n**\n   - `\"생성\"` 하드코딩이 있으면 → `{t('report.shareCard.generate')}`\n\n기존 코드의 나머지 모든 로직, import, 스타일은 그대로 유지."
+  },
+  {
+    "name": "fix-ProfilePage-i18n",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/ProfilePage.tsx",
+    "output": "code",
+    "prompt": "src/pages/ProfilePage.tsx 전체를 수정해서 출력해라. ```tsx 블록으로.\n\n## 수정사항 1가지만\n\n**DRUG_OPTIONS 라벨 i18n 적용**\n\n현재 (하드코딩):\n```tsx\nconst DRUG_OPTIONS = [\n  { value: 'wegovy', label: '위고비 (Wegovy)' },\n  { value: 'mounjaro', label: '마운자로 (Mounjaro)' },\n  { value: 'saxenda', label: '삭센다 (Saxenda)' },\n  { value: 'other', label: '기타' },\n];\n```\n\n수정 후 (ko.json 키 사용):\n- DRUG_OPTIONS는 컴포넌트 외부에서 정의할 수 없으므로, ProfilePage 컴포넌트 내부로 이동하거나\n- 또는 value만 저장하고 렌더링 시 `t('profile.drug.' + option.value)` 사용\n- 가장 간단한 방법: select option 렌더링 시 `t(`profile.drug.${option.value}`)` 사용\n  - wegovy → `t('profile.drug.wegovy')` = '위고비 (Wegovy)'\n  - mounjaro → `t('profile.drug.mounjaro')` = '마운자로 (Mounjaro)'\n  - saxenda → `t('profile.drug.saxenda')` = '삭센다 (Saxenda)'\n  - other → `t('profile.drug.other')` = '기타'\n\n기존 코드의 나머지 모든 로직, import, 스타일은 그대로 유지."
+  },
+  {
+    "name": "fix-ko-json-log-empty",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/i18n/ko.json",
+    "output": "code",
+    "prompt": "src/i18n/ko.json에서 `log.empty` 키 값을 수정해라. 완성된 JSON 전체를 출력.\n\n현재: `\"log.empty\": \"이 날 식사 기록이 없습니다.\"`\n수정: `\"log.empty\": \"오늘 기록이 없습니다.\"`\n\n나머지 모든 키/값 그대로 유지."
+  }
+]

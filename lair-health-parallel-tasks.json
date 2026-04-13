@@ -1,0 +1,31 @@
+[
+  {
+    "name": "complete-medication-pages",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/buildkit/apps/lair-health",
+    "file": "src/pages/MedicationPage.tsx",
+    "context_files": [
+      "src/pages/MedicationAddPage.tsx",
+      "src/pages/MedicationEditPage.tsx",
+      "src/store/medicationStore.ts",
+      "src/hooks/useMedications.ts",
+      "src/services/medicationApi.ts",
+      "src/components/BottomNav.tsx",
+      "src/components/ConfirmModal.tsx"
+    ],
+    "do": "3개 플레이스홀더 페이지를 실제 동작하는 페이지로 완전 재작성하라. 파일 3개를 모두 수정해야 한다: src/pages/MedicationPage.tsx, src/pages/MedicationAddPage.tsx, src/pages/MedicationEditPage.tsx\n\n## 사용할 Store/Hook\nmedicationStore: { medications, logs, loading, error, loadMedications(), loadLogs(from,to), addMedication(input), updateMedication(id,input), removeMedication(id), upsertLog({scheduleId,scheduledDate,status}) }\nuseMedications hook: { medications, logs, loading, error, reload(), toggleCheck(medicationId, scheduleId, date) }\n\n## 타입 (medicationApi.ts에서 import)\nMedicationData: { id, name, form:'ORAL'|'INJECTION'|'OTHER', colorIndex, memo, isActive, schedules: MedicationScheduleData[], dosageHistory }\nMedicationScheduleData: { id, medicationId, dayOfWeek, timeSlot:'MORNING'|'LUNCH'|'EVENING'|'BEDTIME', timeDetail, condition:'FASTING'|'BEFORE_MEAL'|'AFTER_MEAL'|'ANY', isActive }\nMedicationLogData: { id, scheduleId, userId, scheduledDate, status:'TAKEN'|'MISSED'|'SKIPPED', checkedAt, dosageAtTime }\nCreateMedicationInput: { name, form?, colorIndex?, memo?, schedules: ScheduleInput[] }\nScheduleInput: { dayOfWeek?, timeSlot, timeDetail, condition?, dosage? }\n\n## MedicationPage.tsx\n1. 헤더: '복약 관리' + Link to /medication/add ('약 추가' 버튼)\n2. 오늘의 체크리스트: 각 medication의 schedules 순회, timeSlot별 표시, 체크 버튼으로 toggleCheck 호출, TAKEN=초록 MISSED=빨간\n3. 등록된 약 목록: medications 순회, name/form 표시, Link to /medication/{id}/edit\n4. BottomNav 포함\nuseEffect: loadMedications() + loadLogs(todayStr, todayStr)\n\n## MedicationAddPage.tsx\n폼: name(필수), form(ORAL/INJECTION/OTHER 라디오), 스케줄(timeSlot+timeDetail+condition+dosage, 여러개 추가 가능), memo\n저장: addMedication(input) → navigate('/medication')\n취소: navigate('/medication')\n\n## MedicationEditPage.tsx\nuseParams로 id, loadMedications() 후 해당 약 찾기, 폼 초기화\n저장: updateMedication(id, input)\n삭제: ConfirmModal 확인 후 removeMedication(id)\n\n스타일: inline style, Noto Sans KR, maxWidth 430px, primary #10B981. 모든 텍스트 한국어.\nBottomNav는 MedicationPage에만."
+  },
+  {
+    "name": "platform-abstraction",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/buildkit/apps/lair-health",
+    "file": "src/platform/types.ts",
+    "context_files": [
+      "src/lib/lairClient.ts",
+      "src/hooks/useSession.ts",
+      "src/services/api.ts",
+      "src/main.tsx"
+    ],
+    "do": "플랫폼 추상화 레이어 구현 + 기존 Lair SDK 의존 코드 리팩토링. 총 8개 파일 생성/수정.\n\n## 신규 파일 5개 생성\n\n### src/platform/types.ts\nexport type PlatformType = 'miniapp' | 'capacitor' | 'web';\nexport interface PlatformAuth { initialize(): Promise<void>; getSession(): { userId: string|null; token: string|null; nickname: string|null } | null; refreshToken(): Promise<string|null>; logout(): void; }\n\n### src/platform/detect.ts\nimport type { PlatformType } from './types';\nexport function detectPlatform(): PlatformType — window.Capacitor?.isNativePlatform() → 'capacitor', window.ReactNativeWebView → 'miniapp', else 'web'. any 금지, Record<string,unknown> 사용.\n\n### src/platform/miniapp/auth.ts\nexport class MiniappAuth implements PlatformAuth. 기존 lairClient 로직 래핑: initialize()=lairClient.ready(), getSession()=lairClient.auth.getInitData()에서 추출, refreshToken()=lairClient.auth.requestTokenRefresh(). @bug4city/miniapp-sdk는 이 파일에서만 import.\n\n### src/platform/capacitor/auth.ts\nexport class CapacitorAuth implements PlatformAuth. initialize()=localStorage에서 토큰 로드. getSession()=localStorage에서 읽기. refreshToken()=POST fetch로 /health-api/auth/refresh 직접 호출(apiFetch 사용 금지 — 순환참조). logout()=DELETE /health-api/auth/logout + localStorage.clear().\nAPI base: import.meta.env.VITE_API_BASE_URL ?? 'https://dev-api.lair.fi'\n\n### src/platform/index.ts\ndetectPlatform + getPlatformAuth (동적 import로 miniapp/capacitor 분기, 싱글톤 캐시)\n\n## 기존 파일 3개 수정\n\n### src/main.tsx\nlairClient import 제거 → import { getPlatformAuth } from './platform'. Bootstrap에서 getPlatformAuth().then(auth => { auth.initialize(); const s = auth.getSession(); if(s?.token) setToken(s.token); }). lairClient.ready() 제거.\n\n### src/hooks/useSession.ts\nlairClient import 제거 → import { getPlatformType } from '../platform'. isInHostApp: getPlatformType()!=='web', platform: getPlatformType(). token/userId/nickname은 localStorage에서 동기 읽기.\n\n### src/services/api.ts\nlairClient import 제거. refreshToken()에서 dynamic import('../platform') → getPlatformAuth() → auth.refreshToken()\n\n### src/lib/lairClient.ts\n이 파일 삭제 (내용을 빈 파일로 만들어도 됨. platform/miniapp/auth.ts에서 직접 SDK import).\n\n핵심: dynamic import로 번들 분리. any 금지. 미니앱 기능 100% 보존."
+  }
+]

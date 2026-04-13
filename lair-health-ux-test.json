@@ -1,0 +1,52 @@
+{
+  "project": "lair-health-ux-test",
+  "codebase": "/Users/bugbookee/Desktop/lair-health",
+  "steps": [
+    {
+      "step": "ux-review-pages",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "레어헬스 웹앱(GLP-1 복용자 식단 추적)의 5개 탭 페이지 코드를 UX/사용성 관점에서 리뷰해라.\n\n## 검토 파일\n- src/pages/MealDashboardPage.tsx (홈 탭)\n- src/pages/LogPage.tsx (기록 탭)\n- src/pages/MedicationPage.tsx (투약 탭)\n- src/pages/ReportPage.tsx (리포트 탭)\n- src/pages/ProfilePage.tsx (프로필 탭)\n- src/components/BottomNav.tsx (5탭 네비)\n\n## UX 평가 기준\n\n### 1. 네비게이션 & 구조\n- 5탭 BottomNav 아이콘/레이블 명확성\n- 각 탭의 목적과 실제 내용 일치 여부\n- 탭 간 이동 흐름 자연스러움\n\n### 2. 정보 계층 & 레이아웃\n- 핵심 정보가 상단에 위치하는지\n- 스크롤 깊이 적절한지\n- 빈 상태(empty state) 처리\n\n### 3. 인터랙션 & 피드백\n- 로딩 상태 처리 (Spinner 위치)\n- 에러 상태 처리\n- 액션 결과 피드백 (저장 성공/실패)\n- 삭제/결제 등 중요 액션의 confirm 처리\n\n### 4. 접근성\n- 터치 타겟 44px 이상 여부\n- aria-label 존재 여부\n- 색상 대비 (green #10B981 on white)\n\n### 5. GLP-1 사용자 특화 UX\n- 약물 복용 추적의 편의성\n- 칼로리/단백질 목표 달성 시각화\n- 히트맵 가독성\n\n## 출력 형식\n각 탭별로:\n- 잘 된 점 (✅)\n- 개선 필요 (⚠️ 심각도: HIGH/MED/LOW)\n- 구체적 수정 제안\n\n마지막에:\n- 전체 UX 점수: N/10\n- 우선순위 TOP 5 이슈 목록",
+      "files": [
+        "src/pages/MealDashboardPage.tsx",
+        "src/pages/LogPage.tsx",
+        "src/pages/MedicationPage.tsx",
+        "src/pages/ReportPage.tsx",
+        "src/pages/ProfilePage.tsx",
+        "src/components/BottomNav.tsx"
+      ],
+      "output": "/Users/bugbookee/Desktop/buildkit/output/lair-health-ux-report.md"
+    },
+    {
+      "step": "ux-test-scenarios",
+      "role": "Tester",
+      "model": "sonnet",
+      "prompt": "레어헬스 웹앱의 핵심 사용자 시나리오별 테스트 케이스를 작성하고, 코드에서 버그/결함을 찾아라.\n\n## 테스트 시나리오\n\n### 시나리오 1: 신규 사용자 온보딩\n1. 앱 첫 진입 → /onboarding 리다이렉트\n2. 약물 선택 (wegovy 등)\n3. 목표 설정\n4. 홈 탭 진입\n\n### 시나리오 2: 식단 기록 플로우\n1. 홈에서 '+ 추가' 클릭 → /meal/add\n2. 음식 입력 후 저장\n3. 기록 탭에서 오늘 기록 확인\n4. 기록 수정 (인라인 편집)\n5. 기록 삭제\n\n### 시나리오 3: 주간 리포트 확인\n1. 리포트 탭 진입\n2. 히트맵 12주 표시\n3. 주간 요약 카드 확인\n4. (프리미엄) 공유카드 생성\n\n### 시나리오 4: 프로필 설정 변경\n1. 프로필 탭 → 체중 업데이트\n2. 약물 변경 (mounjaro로)\n3. 알림 설정 저장\n4. CSV 내보내기\n\n## 검토 파일\n- src/App.tsx (라우팅 흐름)\n- src/pages/LogPage.tsx\n- src/pages/ReportPage.tsx\n- src/pages/ProfilePage.tsx\n- src/store/mealStore.ts\n- src/store/reportStore.ts\n- src/store/userStore.ts\n\n## 출력 형식\n각 시나리오:\n- 예상 동작\n- 코드에서 발견한 실제 동작\n- 버그/결함 여부 (🐛 있으면 파일명:라인 포함)\n- 테스트 PASS/FAIL\n\n마지막에:\n- 발견된 버그 목록\n- 수정 우선순위",
+      "input": ["ux-review-pages"],
+      "files": [
+        "src/App.tsx",
+        "src/pages/LogPage.tsx",
+        "src/pages/ReportPage.tsx",
+        "src/pages/ProfilePage.tsx",
+        "src/store/mealStore.ts",
+        "src/store/reportStore.ts",
+        "src/store/userStore.ts"
+      ],
+      "output": "/Users/bugbookee/Desktop/buildkit/output/lair-health-test-report.md"
+    },
+    {
+      "step": "i18n-check",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "레어헬스 웹앱에서 i18n(번역) 누락 키를 찾아라.\n\n## 확인할 파일\n- src/pages/LogPage.tsx\n- src/pages/ReportPage.tsx\n- src/pages/ProfilePage.tsx\n- src/components/BottomNav.tsx\n\n## 번역 파일\n- src/i18n/ 폴더의 ko.json (또는 유사 파일)\n\n## 체크리스트\n1. t('nav.log'), t('nav.report'), t('nav.profile') 키가 ko.json에 있는지\n2. 각 페이지에서 useTranslation 없이 하드코딩된 한국어 텍스트\n3. t() 호출하지만 ko.json에 없는 키\n\n## 출력\n- 누락된 번역 키 목록\n- ko.json에 추가해야 할 내용 (JSON 형식으로)\n- 하드코딩 텍스트 → t() 변환 필요한 항목",
+      "input": ["ux-review-pages"],
+      "files": [
+        "src/pages/LogPage.tsx",
+        "src/pages/ReportPage.tsx",
+        "src/pages/ProfilePage.tsx",
+        "src/components/BottomNav.tsx"
+      ],
+      "output": "/Users/bugbookee/Desktop/buildkit/output/lair-health-i18n-report.md"
+    }
+  ]
+}

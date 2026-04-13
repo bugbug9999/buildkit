@@ -263,7 +263,7 @@ export async function callAI(model, prompt, options = {}) {
     fs.writeFileSync(tmpFile, prompt);
     // 수정: $(cat file) shell expansion → stdin 파이프 (ARG_MAX 1MB 한계 회피)
     // spawnCodex는 Promise 기반 → 이벤트 루프 블로킹 없음
-    await spawnCodex(tmpFile, outFile, 600000);
+    await spawnCodex(tmpFile, outFile, 1800000); // 30분
     result = fs.existsSync(outFile) ? fs.readFileSync(outFile, 'utf-8') : '';
     fs.unlink(tmpFile, () => {});
     fs.unlink(outFile, () => {});

@@ -1,0 +1,17 @@
+{
+  "project": "lair-health-score-v6",
+  "codebase": "/Users/bugbookee/Desktop/lair-health",
+  "steps": [
+    {
+      "step": "score-v6",
+      "role": "Reviewer",
+      "model": "sonnet",
+      "prompt": "레어헬스 웹앱 UX 점수 v6 최종 검토. 이전 9.5/10. 목표 9.7.\n\n## 이번 추가 수정\n- ReportPage: 히트맵 컨테이너에 `role=\"img\"` + `aria-label={t('report.heatmap.ariaLabel', { weeks })}` → 스크린리더 요약\n- ReportPage: 개별 셀 `aria-hidden=\"true\"` (AT 노이즈 제거)\n- ReportPage: PLAN_OPTIONS label과 description 키 분리 (`report.plan.30days.desc`, `report.plan.90days.desc`)\n- ko.json: `report.heatmap.ariaLabel`, `report.plan.30days.desc`, `report.plan.90days.desc` 추가\n\n## 검토 파일\n- src/pages/ReportPage.tsx\n- src/i18n/ko.json\n- (LogPage, ProfilePage, BottomNav는 이미 ✅ 확인됨)\n\n## 출력 형식\n- 파일별 ✅/⚠️\n- 기준별 점수 (7기준)\n- **전체 UX 점수: N/10**\n- 목표 9.7 달성 여부",
+      "files": [
+        "src/pages/ReportPage.tsx",
+        "src/i18n/ko.json"
+      ],
+      "output": "/Users/bugbookee/Desktop/buildkit/output/lair-health-score-v6.md"
+    }
+  ]
+}

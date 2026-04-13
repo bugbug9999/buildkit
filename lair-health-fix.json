@@ -1,0 +1,26 @@
+[
+  {
+    "name": "fix-LogPage",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/LogPage.tsx",
+    "output": "code",
+    "prompt": "src/pages/LogPage.tsx의 다음 2개 에러를 수정해라. 코드 전체를 ```tsx 블록으로 출력.\n\n1. Spinner import 수정:\n   BEFORE: import Spinner from '../components/Spinner'\n   AFTER:  import { Spinner } from '../components/Spinner'\n\n2. UpdateMealLogInput import를 type-only로 변경:\n   BEFORE: import { updateMealLog, UpdateMealLogInput } from '../services/mealApi'\n   AFTER:  import { updateMealLog } from '../services/mealApi'\n           import type { UpdateMealLogInput } from '../services/mealApi'\n\n다른 코드 변경 없음."
+  },
+  {
+    "name": "fix-ReportPage",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/ReportPage.tsx",
+    "output": "code",
+    "prompt": "src/pages/ReportPage.tsx의 다음 2개 에러를 수정해라. 코드 전체를 ```tsx 블록으로 출력.\n\n1. Spinner import 수정:\n   BEFORE: import Spinner from '../components/Spinner'\n   AFTER:  import { Spinner } from '../components/Spinner'\n\n2. 미사용 변수 제거: `secondaryButtonStyle` 선언을 삭제\n\n다른 코드 변경 없음."
+  },
+  {
+    "name": "fix-ProfilePage",
+    "model": "codex",
+    "codebase": "/Users/bugbookee/Desktop/lair-health",
+    "file": "src/pages/ProfilePage.tsx",
+    "output": "code",
+    "prompt": "src/pages/ProfilePage.tsx의 다음 에러들을 수정해라. 코드 전체를 ```tsx 블록으로 출력.\n\n1. MealLogData를 type-only import로 변경:\n   BEFORE: import { fetchMealLogs, MealLogData } from '../services/mealApi'\n   AFTER:  import { fetchMealLogs } from '../services/mealApi'\n           import type { MealLogData } from '../services/mealApi'\n\n2. MealLogData → Record<string, unknown> 변환 에러 (69, 74번째 줄 근처):\n   CSV 생성 시 row 접근 방식 변경. MealLogData 필드를 직접 접근:\n   BEFORE: headers.map(h => escapeCsv(String((log as Record<string, unknown>)[h] ?? '')))\n   AFTER:  CSV 헤더를 ['기록시각','음식명','칼로리(kcal)','단백질(g)','탄수화물(g)','지방(g)']로 고정하고\n           row를 [log.loggedAt, log.foodName, String(log.caloriesKcal), String(log.proteinG), String(log.carbsG), String(log.fatG)]로 직접 생성\n\n다른 코드 변경 없음."
+  }
+]

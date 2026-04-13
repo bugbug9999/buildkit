@@ -1,0 +1,14 @@
+{
+  "project": "lair-health-review",
+  "codebase": "/Users/bugbookee/Desktop/ai/lair/lair-app-v2",
+  "steps": [
+    {
+      "step": "review",
+      "role": "reviewer",
+      "model": "sonnet",
+      "output": "output/lair-health-phase1-2-review.md",
+      "pass": 8,
+      "prompt": "Review the Phase 1 + Phase 2 implementation of the 'lair-health' Lair mini app.\n\nRead ALL files under /Users/bugbookee/Desktop/ai/lair/lair-app-v2/apps/lair-health/ and evaluate quality.\n\nKey files to check:\n- package.json, vite.config.ts, tsconfig.json — scaffold correctness\n- src/main.tsx — LairMiniAppClient init, ready() call, auth from bridge\n- src/App.tsx — routing\n- src/lib/lairClient.ts — SDK singleton\n- src/lib/storage.ts — localStorage wrapper\n- src/services/api.ts — fetch wrapper, 401 refresh, NetworkError\n- src/services/medicationApi.ts — ported from mobile, types complete\n- src/services/mealApi.ts — meal CRUD\n- src/store/medicationStore.ts, mealStore.ts, uiStore.ts — Zustand v5\n- src/hooks/useSession.ts, useMedications.ts, useMeals.ts\n- src/theme/tokens.ts, global.css\n- src/i18n/ko.json (40+ keys), i18n.ts\n- src/components/OfflineBanner.tsx, ErrorBoundary.tsx\n\nScore each 0-10:\n1. Lair SDK compliance — LairMiniAppClient used correctly, ready() in main.tsx, auth from bridge initData\n2. TypeScript strictness — no implicit any, correct types throughout\n3. React 19 patterns — proper hooks, no legacy anti-patterns\n4. Architecture quality — clean service/store/hook separation, no circular deps\n5. Code completeness — no empty stubs, no TODO comments, all files populated\n\nFor each issue:\n- Severity: CRITICAL / WARN / NOTE\n- File\n- Problem\n- Fix\n\nOutput:\n## Score: X/10\n## Verdict: PASS / FAIL (8+ = PASS)\n## Critical Issues\n## Warnings\n## Summary"
+    }
+  ]
+}
