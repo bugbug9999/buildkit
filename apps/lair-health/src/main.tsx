@@ -2,13 +2,12 @@ import { StrictMode, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { lairClient } from './lib/lairClient';
+import { getPlatformAuth } from './platform';
 import { useUIStore } from './store/uiStore';
 import './i18n/i18n';
 import './theme/global.css';
 
 let vConsoleInitialized = false;
-let readyCall: Promise<void> | null = null;
 
 function enableDevConsole(): Promise<void> {
   if (!import.meta.env.DEV || vConsoleInitialized) {
@@ -27,32 +26,42 @@ function enableDevConsole(): Promise<void> {
     });
 }
 
-function ensureLairReady(): Promise<void> {
-  readyCall ??= Promise.resolve(lairClient.ready())
-    .then(() => undefined)
-    .catch((error: unknown) => {
-      console.error('Failed to initialize Lair mini app client.', error);
-    });
+function readStoredTheme(): 'light' | 'dark' | null {
+  try {
+    const raw = localStorage.getItem('lair-health:theme');
+    if (raw === null) {
+      return null;
+    }
 
-  return readyCall;
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed === 'light' || parsed === 'dark' ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 function Bootstrap(): ReactElement {
   useEffect(() => {
-    const initData = lairClient.auth.getInitData();
     const { setOffline, setTheme, setToken } = useUIStore.getState();
-
-    if (initData?.token) {
-      setToken(initData.token);
-    }
-
-    if (initData?.theme === 'light' || initData?.theme === 'dark') {
-      setTheme(initData.theme);
-    }
+    const theme = readStoredTheme();
 
     setOffline(!navigator.onLine);
+    if (theme) {
+      setTheme(theme);
+    }
     void enableDevConsole();
-    void ensureLairReady();
+    void getPlatformAuth()
+      .then(async (auth) => {
+        await auth.initialize();
+
+        const session = auth.getSession();
+        if (session?.token) {
+          setToken(session.token);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to initialize platform auth.', error);
+      });
   }, []);
 
   return <App />;

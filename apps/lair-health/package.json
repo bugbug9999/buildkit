@@ -6,14 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:miniapp": "tsc -b && vite build",
+    "build:capacitor": "VITE_PLATFORM=capacitor tsc -b && VITE_PLATFORM=capacitor vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bug4city/api-client": "workspace:*",
-    "@bug4city/bridge": "workspace:*",
-    "@bug4city/miniapp-sdk": "workspace:*",
-    "@bug4city/shared": "workspace:*",
     "i18next": "^25.1.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -22,6 +20,10 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^7.6.1",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/ios": "^8.3.0",
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",

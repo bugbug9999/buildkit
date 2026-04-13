@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lair Health</string>
+    <string name="title_activity_main">Lair Health</string>
+    <string name="package_name">fi.lair.health</string>
+    <string name="custom_url_scheme">fi.lair.health</string>
+</resources>

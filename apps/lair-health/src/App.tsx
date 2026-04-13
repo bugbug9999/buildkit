@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { OfflineBanner } from './components/OfflineBanner';
 import { useSession } from './hooks/useSession';
+import { getPlatformType } from './platform';
 import { useUIStore } from './store/uiStore';
 
 const MealDashboardPage = lazy(() => import('./pages/MealDashboardPage'));
@@ -14,6 +15,7 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const LogPage = lazy(() => import('./pages/LogPage'));
 const ReportPage = lazy(() => import('./pages/ReportPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 
 function PageLoader(): ReactElement {
   return (
@@ -53,8 +55,20 @@ function AppShell(): ReactElement {
   useSession();
   const location = useLocation();
   const onboardingDone = useUIStore((state) => state.onboardingDone);
+  const token = useUIStore((state) => state.token);
+  const platform = getPlatformType();
 
-  if (!onboardingDone && location.pathname !== '/onboarding') {
+  // Capacitor: 토큰 없으면 로그인 페이지로
+  if (platform !== 'miniapp' && !token && location.pathname !== '/login') {
+    return <Navigate to="/login" replace />;
+  }
+
+  // 미니앱에서 /login 접근 시 홈으로
+  if (platform === 'miniapp' && location.pathname === '/login') {
+    return <Navigate to="/" replace />;
+  }
+
+  if (!onboardingDone && location.pathname !== '/onboarding' && location.pathname !== '/login') {
     return <Navigate to="/onboarding" replace />;
   }
 
@@ -62,6 +76,7 @@ function AppShell(): ReactElement {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={<MealDashboardPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/log" element={<LogPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/medication" element={<MedicationPage />} />

@@ -1,8 +1,17 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
+const isCapacitor = process.env.VITE_PLATFORM === 'capacitor';
+
 export default defineConfig({
-  base: '/miniapp/lair-health/',
+  base: isCapacitor ? './' : '/miniapp/lair-health/',
+  build: isCapacitor
+    ? {
+        rollupOptions: {
+          external: ['@bug4city/miniapp-sdk'],
+        },
+      }
+    : {},
   plugins: [react()],
   define: {
     'globalThis.__LAIR_NETWORK__': JSON.stringify('mainnet'),

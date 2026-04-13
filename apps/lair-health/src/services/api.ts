@@ -1,5 +1,3 @@
-import { lairClient } from '../lib/lairClient';
-
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://dev-api.lair.fi';
 
 export class NetworkError extends Error {
@@ -20,12 +18,9 @@ function getToken(): string | null {
 
 async function refreshToken(): Promise<string | null> {
   try {
-    const result = await lairClient.auth.requestTokenRefresh();
-    const token = (result as { token?: string }).token ?? null;
-    if (token) {
-      localStorage.setItem('lair-health:token', JSON.stringify(token));
-    }
-    return token;
+    const { getPlatformAuth } = await import('../platform');
+    const auth = await getPlatformAuth();
+    return auth.refreshToken();
   } catch {
     return null;
   }

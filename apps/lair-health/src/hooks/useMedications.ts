@@ -12,7 +12,7 @@ export function useMedications() {
   const reload = useCallback(() => loadMedications(), [loadMedications]);
 
   const toggleCheck = useCallback(
-    (medicationId: string, scheduleId: string, date: string) => {
+    (_medicationId: string, scheduleId: string, date: string) => {
       const existing = logs.find(
         (l) => l.scheduleId === scheduleId && l.scheduledDate.startsWith(date)
       );

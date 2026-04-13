@@ -27,7 +27,7 @@ interface MedicationState {
   upsertLog: (input: { scheduleId: string; scheduledDate: string; status: 'TAKEN' | 'MISSED' }) => Promise<void>;
 }
 
-export const useMedicationStore = create<MedicationState>((set, get) => ({
+export const useMedicationStore = create<MedicationState>((set, _get) => ({
   medications: [],
   logs: [],
   loading: false,

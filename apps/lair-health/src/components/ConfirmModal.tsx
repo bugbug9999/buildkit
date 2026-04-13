@@ -16,7 +16,7 @@ const overlayStyle: CSSProperties = {
   display: 'grid',
   placeItems: 'center',
   padding: 20,
-  backgroundColor: 'rgba(15, 23, 42, 0.56)',
+  backgroundColor: 'rgba(0, 0, 0, 0.4)',
 };
 
 const cardStyle: CSSProperties = {
@@ -26,10 +26,9 @@ const cardStyle: CSSProperties = {
   padding: 24,
   backgroundColor: '#FFFFFF',
   boxSizing: 'border-box',
-  boxShadow: '0 24px 48px rgba(15, 23, 42, 0.18)',
 };
 
-const baseButtonStyle: CSSProperties = {
+const buttonStyle: CSSProperties = {
   flex: 1,
   height: 44,
   borderRadius: 12,
@@ -46,11 +45,7 @@ export function ConfirmModal({
   onCancel,
 }: ConfirmModalProps): ReactElement {
   return (
-    <div
-      role="presentation"
-      style={overlayStyle}
-      onClick={onCancel}
-    >
+    <div role="presentation" style={overlayStyle} onClick={onCancel}>
       <div
         role="dialog"
         aria-modal="true"
@@ -74,8 +69,8 @@ export function ConfirmModal({
           style={{
             margin: '12px 0 0',
             fontSize: 15,
-            lineHeight: 1.6,
             color: '#64748B',
+            lineHeight: 1.5,
           }}
         >
           {message}
@@ -89,27 +84,26 @@ export function ConfirmModal({
         >
           <button
             type="button"
+            onClick={onCancel}
             style={{
-              ...baseButtonStyle,
+              ...buttonStyle,
               border: '1px solid #CBD5E1',
               backgroundColor: '#FFFFFF',
               color: '#0F172A',
-              fontWeight: 600,
             }}
-            onClick={onCancel}
           >
             {cancelText}
           </button>
           <button
             type="button"
+            onClick={onConfirm}
             style={{
-              ...baseButtonStyle,
+              ...buttonStyle,
               border: 'none',
               backgroundColor: '#10B981',
               color: '#FFFFFF',
               fontWeight: 700,
             }}
-            onClick={onConfirm}
           >
             {confirmText}
           </button>
