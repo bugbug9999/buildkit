@@ -4,3 +4,6 @@ dashboard/.next/
 dashboard/start-dev.sh
 *.sqlite-shm
 *.sqlite-wal
+
+# lair-health는 별도 레포로 관리
+apps/lair-health/
