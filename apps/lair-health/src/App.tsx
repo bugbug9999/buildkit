@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import type { ReactElement } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { OfflineBanner } from './components/OfflineBanner';
 import { useSession } from './hooks/useSession';
@@ -92,14 +92,22 @@ function AppShell(): ReactElement {
 }
 
 export default function App(): ReactElement {
+  const isCapacitor = import.meta.env.VITE_PLATFORM === 'capacitor';
   const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
 
   return (
     <ErrorBoundary>
-      <BrowserRouter basename={basename}>
-        <OfflineBanner />
-        <AppShell />
-      </BrowserRouter>
+      {isCapacitor ? (
+        <HashRouter>
+          <OfflineBanner />
+          <AppShell />
+        </HashRouter>
+      ) : (
+        <BrowserRouter basename={basename}>
+          <OfflineBanner />
+          <AppShell />
+        </BrowserRouter>
+      )}
     </ErrorBoundary>
   );
 }

@@ -5,13 +5,13 @@ const isCapacitor = process.env.VITE_PLATFORM === 'capacitor';
 
 export default defineConfig({
   base: isCapacitor ? './' : '/miniapp/lair-health/',
-  build: isCapacitor
-    ? {
-        rollupOptions: {
-          external: ['@bug4city/miniapp-sdk'],
-        },
-      }
-    : {},
+  build: {
+    rollupOptions: {
+      external: ['@bug4city/miniapp-sdk'],
+      ...(isCapacitor ? {} : {}),
+    },
+    ...(isCapacitor ? {} : {}),
+  },
   plugins: [react()],
   define: {
     'globalThis.__LAIR_NETWORK__': JSON.stringify('mainnet'),

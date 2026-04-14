@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUIStore } from '../store/uiStore';
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://dev-api.lair.fi';
 
@@ -50,6 +51,8 @@ type Provider = 'kakao' | 'apple' | 'google';
 
 export default function LoginPage(): ReactElement {
   const navigate = useNavigate();
+  const setToken = useUIStore((state) => state.setToken);
+  const completeOnboarding = useUIStore((state) => state.completeOnboarding);
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -147,6 +150,25 @@ export default function LoginPage(): ReactElement {
         >
           {loadingProvider === 'google' ? '로그인 중...' : 'Google로 시작하기'}
         </button>
+
+        {import.meta.env.DEV || import.meta.env.VITE_PLATFORM === 'capacitor' ? (
+          <button
+            type="button"
+            style={{ ...buttonBase, backgroundColor: '#E2E8F0', color: '#475569', fontSize: 13, marginTop: 8 }}
+            onClick={() => {
+              setToken('mock-dev-token');
+              localStorage.setItem('lair-health:refresh-token', 'mock-refresh-token');
+              localStorage.setItem('lair-health:user-id', 'dev-user-1');
+              completeOnboarding({
+                glp1Drug: 'other', glp1StartDate: '', weightKg: 70, heightCm: 170,
+                age: 30, sex: 'male', goalCalories: 2000, goalCarbs: 250, goalProtein: 120, goalFat: 65,
+              });
+              navigate('/');
+            }}
+          >
+            🛠️ 개발자 모드 로그인
+          </button>
+        ) : null}
 
         <p style={{ marginTop: 24, textAlign: 'center', fontSize: 13, color: '#94A3B8', lineHeight: 1.6 }}>
           레어 미니앱에서 접속 중이신가요?<br />
