@@ -1,0 +1,52 @@
+{
+  "$schema": "./config-schema.json",
+  "port": 3170,
+  "buildkitDir": "../",
+  "obsidianDir": null,
+  "prefixes": {
+    "my-app": "my-app",
+    "my-app-fix": "my-app",
+    "other-project": "other-project"
+  },
+  "deps": {
+    "other-project": ["my-app"]
+  },
+  "projects": {
+    "my-app": {
+      "name": "My App",
+      "desc": "Description of your app",
+      "repoPath": "/path/to/repo",
+      "category": "saas",
+      "deadline": null,
+      "hypothesis": "Why this product exists and what market gap it fills.",
+      "bizmodel": "How this makes money.",
+      "phases": [
+        { "name": "Phase 1: MVP", "status": "done" },
+        { "name": "Phase 2: Launch", "status": "wip" },
+        { "name": "Phase 3: Growth", "status": "todo" }
+      ],
+      "progressSource": {
+        "type": "checkbox",
+        "file": "/path/to/checklist.md"
+      },
+      "todoSource": "/path/to/checklist.md",
+      "docs": [
+        { "name": "spec.md", "file": "spec.md" }
+      ]
+    },
+    "other-project": {
+      "name": "Other Project",
+      "desc": "A dependency project",
+      "repoPath": null,
+      "category": "health",
+      "hypothesis": "...",
+      "bizmodel": "...",
+      "phases": [
+        { "name": "Design", "status": "done" },
+        { "name": "Implement", "status": "todo" }
+      ],
+      "progressSource": { "type": "phase", "doneCount": 1, "totalCount": 2 },
+      "docs": []
+    }
+  }
+}
